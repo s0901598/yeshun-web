@@ -10,7 +10,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "deploy": "bash scripts/deploy-pages.sh"
+    "deploy": "gh workflow run deploy.yml -R s0901598/yeshun-web",
+    "seed": "node --env-file=.env scripts/seed.mjs"
   },
   "dependencies": {
     "@astrojs/preact": "^6.0.6",

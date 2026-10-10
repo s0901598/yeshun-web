@@ -1,6 +1,8 @@
 ---
 // 首頁精簡版流程：捲到這裡時，連接線畫出來，步驟依序出現
-import { processSteps } from '../data/site';
+import { getProcessSteps } from '../lib/data';
+
+const processSteps = await getProcessSteps();
 ---
 <ol class="steps" data-stagger>
   {processSteps.map((step, i) => (

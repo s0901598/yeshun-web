@@ -3,7 +3,10 @@ import { u } from '../lib/url';
 import Base from '../layouts/Base.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import Todo from '../components/Todo.astro';
-import { processSteps, processTodo } from '../data/site';
+import { processTodo } from '../data/site';
+import { getProcessSteps } from '../lib/data';
+
+const processSteps = await getProcessSteps();
 ---
 <Base title="服務流程" description="從初步諮詢到完工保固，業順營造的五個服務步驟。">
   <section class="page-hero">

@@ -4,8 +4,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { readFile, appendFile } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
-import { projects } from '../src/data/projects.ts';
-import { details, processSteps } from '../src/data/site.ts';
+import { projects, details, processSteps } from './sample-data.ts';
 
 const email = process.argv[2];
 if (!email) throw new Error('請提供管理員 email');

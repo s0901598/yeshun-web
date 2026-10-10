@@ -5,10 +5,11 @@ import ProjectCard from '../components/ProjectCard.astro';
 import ProcessSteps from '../components/ProcessSteps.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import Todo from '../components/Todo.astro';
-import { site, details } from '../data/site';
-import { getFeaturedProjects } from '../lib/data';
+import { site } from '../data/site';
+import { getFeaturedProjects, getDetails } from '../lib/data';
 
 const featured = await getFeaturedProjects(4);
+const details = await getDetails();
 ---
 <Base>
   <!-- 主視覺 -->
