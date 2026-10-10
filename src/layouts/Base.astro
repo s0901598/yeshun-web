@@ -188,14 +188,21 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
     position: fixed; inset: 0 0 auto 0; z-index: 100;
     height: var(--header-h);
     border-bottom: 1px solid transparent;
-    transition: background-color .3s, border-color .3s, backdrop-filter .3s;
+    transition: border-color .3s;
   }
-  .header.is-scrolled, :global(body.menu-open) .header {
+  /* 毛玻璃底色放在獨立的底層。不能直接加在 .header 上：
+     iPhone Safari 會把 backdrop-filter 元素當成 fixed 子元素的範圍，選單會被截在頁首高度內 */
+  .header::before {
+    content: ''; position: absolute; inset: 0; z-index: -1;
+    transition: background-color .3s;
+  }
+  .header.is-scrolled, :global(body.menu-open) .header { border-bottom-color: var(--line); }
+  .header.is-scrolled::before, :global(body.menu-open) .header::before {
     background: rgba(var(--bg-rgb), 0.88);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border-bottom-color: var(--line);
   }
+  :global(body.menu-open) .header::before { background: var(--bg); }
   .header__inner { height: 100%; display: flex; align-items: center; gap: 8px; }
   .brand { display: flex; align-items: center; gap: 12px; position: relative; z-index: 2; }
   .brand img { width: 40px; height: auto; }
@@ -207,8 +214,9 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
   .nav {
     position: fixed; inset: var(--header-h) 0 0 0;
     background: var(--bg);
-    padding: 24px var(--gutter) 40px;
+    padding: 24px var(--gutter) calc(40px + env(safe-area-inset-bottom));
     display: flex; flex-direction: column; gap: 32px;
+    overscroll-behavior: contain;
     opacity: 0; visibility: hidden; transform: translateY(-8px);
     transition: opacity .25s, transform .25s, visibility .25s;
     overflow-y: auto;

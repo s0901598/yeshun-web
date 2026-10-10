@@ -29,6 +29,7 @@
 | `npm run dev` | 本機開發，網址 http://localhost:4321 |
 | `npm run build` | 打包到 `dist/` |
 | `npm run preview` | 預覽打包結果，網址 http://localhost:4321/yeshun-web/ |
+| `npm run verify` | 完整驗證（Chrome＋iPhone Safari 核心 × 手機/平板/電腦 × 深/淺色，含開選單、看大圖、篩選、主題切換）。先執行 `npm run preview`；也可以加網址測線上版：`npm run verify -- https://s0901598.github.io/yeshun-web` |
 | `npm run deploy` | 手動觸發 GitHub Actions 重新部署官網 |
 | `npm run seed` | （只在初次建置用）把 `scripts/sample-data.ts` 的示意內容匯入資料庫，會覆蓋現有內容 |
 

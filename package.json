@@ -11,7 +11,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "deploy": "gh workflow run deploy.yml -R s0901598/yeshun-web",
-    "seed": "node --env-file=.env scripts/seed.mjs"
+    "seed": "node --env-file=.env scripts/seed.mjs",
+    "verify": "node tests/verify.mjs"
   },
   "dependencies": {
     "@astrojs/preact": "^6.0.6",
@@ -21,6 +22,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "playwright": "^1.60.0",
     "typescript": "^6.0.3"
   }
 }
