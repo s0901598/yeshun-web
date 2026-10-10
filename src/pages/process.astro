@@ -1,0 +1,160 @@
+---
+import Base from '../layouts/Base.astro';
+import ContactCTA from '../components/ContactCTA.astro';
+import Todo from '../components/Todo.astro';
+import { processSteps, processTodo } from '../data/site';
+---
+<Base title="服務流程" description="從初步諮詢到完工保固，業順營造的五個服務步驟。">
+  <section class="page-hero">
+    <div class="page-hero__bg" aria-hidden="true"><img src="/images/detail-plan.webp" alt="" /></div>
+    <div class="blueprint blueprint-overlay" aria-hidden="true"></div>
+    <div class="container">
+      <p class="eyebrow">PROCESS</p>
+      <h1 class="h-display">服務流程<Todo show={processTodo} label="內容待確認" /></h1>
+      <p class="lead">從第一通電話到完工保固，五個步驟，每一步做什麼、需要多久，都先說清楚。</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="tl" data-timeline>
+        <span class="tl__track" aria-hidden="true"><span class="tl__fill" data-fill></span></span>
+        <ol class="tl__list">
+        {processSteps.map((step, i) => (
+          <li class:list={['tl__step', { 'tl__step--right': i % 2 === 1 }]} data-step>
+            <span class="tl__node" aria-hidden="true"><span class="mono">{step.no}</span></span>
+            <article class="tl__card corners">
+              <p class="tl__en mono">STEP {step.no} / {step.en}</p>
+              <h2 class="tl__title">{step.title}</h2>
+              <p class="tl__desc">{step.desc}</p>
+              <ul class="tl__items">
+                {step.items.map((item) => <li>{item}</li>)}
+              </ul>
+              <p class="tl__duration"><span class="mono">TIME</span>{step.duration}</p>
+            </article>
+          </li>
+        ))}
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <ContactCTA />
+</Base>
+
+<script>
+  // 金色線條跟著捲動往下延伸；線經過的步驟依序亮起、卡片浮現
+  const timeline = document.querySelector<HTMLElement>('[data-timeline]');
+  const fill = document.querySelector<HTMLElement>('[data-fill]');
+  const steps = [...document.querySelectorAll<HTMLElement>('[data-step]')];
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (timeline && fill) {
+    if (reduce) {
+      fill.style.transform = 'scaleY(1)';
+      steps.forEach((s) => s.classList.add('is-active'));
+    } else {
+      let shown = 0;   // 目前畫到的長度（0–1）
+      let target = 0;  // 依捲動位置該畫到的長度
+      let running = false;
+
+      const measure = () => {
+        const rect = timeline.getBoundingClientRect();
+        // 畫到畫面 70% 高度的位置
+        const reach = window.innerHeight * 0.7 - rect.top;
+        target = Math.max(target, Math.min(Math.max(reach / rect.height, 0), 1));
+        if (!running) { running = true; requestAnimationFrame(tick); }
+      };
+
+      const tick = () => {
+        // 慢慢追上目標，讓線條有「畫出來」的感覺
+        shown += Math.min((target - shown) * 0.06, 0.012);
+        if (target - shown < 0.0005) shown = target;
+        fill.style.transform = `scaleY(${shown})`;
+        const drawn = shown * timeline.offsetHeight;
+        steps.forEach((s) => {
+          if (s.offsetTop + 28 <= drawn + 1) s.classList.add('is-active');
+        });
+        if (shown < target) requestAnimationFrame(tick);
+        else running = false;
+      };
+
+      window.addEventListener('scroll', measure, { passive: true });
+      window.addEventListener('resize', measure);
+      measure();
+    }
+  }
+</script>
+
+<style>
+  /* 時間軸：手機與平板線在左側；電腦線在中間，卡片左右交錯 */
+  .tl { position: relative; padding-left: 56px; }
+  .tl__list { display: grid; gap: 40px; }
+  .tl__track {
+    position: absolute; left: 21px; top: 0; bottom: 0; width: 2px;
+    background: var(--line);
+  }
+  .tl__fill {
+    position: absolute; inset: 0;
+    background: linear-gradient(var(--gold), var(--amber));
+    box-shadow: 0 0 12px rgba(215, 148, 45, .5);
+    transform: scaleY(0); transform-origin: top;
+  }
+
+  .tl__step { position: relative; }
+  .tl__node {
+    position: absolute; left: -56px; top: 8px; width: 44px; height: 44px;
+    display: grid; place-items: center; border-radius: 50%;
+    background: var(--bg); border: 1px solid var(--line-strong);
+    font-size: 14px; color: var(--text-3);
+    transition: border-color .5s, color .5s, box-shadow .5s, background-color .5s;
+  }
+  .tl__step.is-active .tl__node {
+    border-color: var(--gold); color: #1a1a1a; background: var(--gold);
+    box-shadow: 0 0 0 6px rgba(195, 162, 127, .18), 0 0 22px rgba(195, 162, 127, .6);
+  }
+
+  .tl__card {
+    border: 1px solid var(--line); background: var(--surface); padding: 24px 22px;
+    opacity: 0; transform: translateY(28px);
+    transition: opacity .7s ease .1s, transform .7s ease .1s, border-color .5s;
+  }
+  .tl__step.is-active .tl__card { opacity: 1; transform: none; border-color: var(--line-strong); }
+
+  .tl__en { font-size: 13px; color: var(--gold-text); }
+  .tl__title { font-size: clamp(26px, 3.4vw, 32px); margin-top: 6px; }
+  .tl__desc { color: var(--text-2); font-size: 18px; margin-top: 8px; }
+  .tl__items { margin-top: 18px; border-top: 1px dashed var(--line); padding-top: 14px; display: grid; gap: 10px; }
+  .tl__items li { position: relative; padding-left: 22px; font-size: 17px; }
+  .tl__items li::before {
+    content: ''; position: absolute; left: 2px; top: .7em; width: 8px; height: 8px;
+    border: 1px solid var(--gold); transform: rotate(45deg);
+  }
+  .tl__duration {
+    display: inline-flex; align-items: center; gap: 12px; margin-top: 20px;
+    border: 1px solid var(--line-strong); padding: 4px 14px; font-size: 16px;
+  }
+  .tl__duration .mono { font-size: 12px; color: var(--gold-text); }
+
+  @media (min-width: 768px) {
+    .tl { padding-left: 80px; }
+    .tl__list { gap: 56px; }
+    .tl__track { left: 29px; }
+    .tl__node { left: -80px; width: 60px; height: 60px; font-size: 18px; }
+    .tl__card { padding: 32px 36px; }
+  }
+
+  @media (min-width: 1200px) {
+    .tl { padding-left: 0; }
+    .tl__list { gap: 24px; }
+    .tl__track { left: 50%; transform: translateX(-1px); }
+    .tl__step { display: grid; grid-template-columns: 1fr 120px 1fr; align-items: start; }
+    .tl__node { position: relative; left: 0; top: 0; grid-column: 2; justify-self: center; width: 64px; height: 64px; font-size: 18px; }
+    .tl__card { grid-column: 1; grid-row: 1; }
+    .tl__step--right .tl__card { grid-column: 3; }
+    .tl__step:not(.tl__step--right) .tl__card { transform: translateX(-28px); }
+    .tl__step--right .tl__card { transform: translateX(28px); }
+    .tl__step.is-active .tl__card { transform: none; }
+    .tl__step + .tl__step { margin-top: -40px; }
+  }
+</style>

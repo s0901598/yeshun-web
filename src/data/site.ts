@@ -34,15 +34,37 @@ export const nav = [
   { href: '/about', label: '關於業順', en: 'ABOUT' },
   { href: '/projects', label: '案例作品', en: 'PROJECTS' },
   { href: '/details', label: '注重的細節', en: 'DETAILS' },
-  { href: '/#process', label: '服務流程', en: 'PROCESS' },
+  { href: '/process', label: '服務流程', en: 'PROCESS' },
 ];
 
+// 服務流程。todo 為 true 時，流程頁會顯示「內容待確認」標籤
+export const processTodo = true;
 export const processSteps = [
-  { no: '01', title: '初步諮詢', desc: '電話或 LINE 聊聊需求、預算與時程。' },
-  { no: '02', title: '現場丈量', desc: '到府丈量、檢查屋況，記錄管線與結構現況。' },
-  { no: '03', title: '設計與報價', desc: '提出平面配置與明細報價，每一項目都列清楚。' },
-  { no: '04', title: '簽約施工', desc: '依工序施工，各階段拍照回報進度。' },
-  { no: '05', title: '驗收與保固', desc: '逐項驗收、交付完工資料，享有保固服務。' },
+  {
+    no: '01', en: 'CONSULT', title: '初步諮詢', duration: '1–3 天',
+    desc: '電話或 LINE 聊聊需求、預算與時程。',
+    items: ['了解空間用途與家庭成員需求', '確認預算範圍與期望完工時間', '說明後續流程與收費方式'],
+  },
+  {
+    no: '02', en: 'SURVEY', title: '現場丈量', duration: '約 1 週',
+    desc: '到府丈量、檢查屋況，記錄管線與結構現況。',
+    items: ['到府丈量各空間尺寸', '檢查漏水、管線與結構狀況', '拍照記錄原始屋況'],
+  },
+  {
+    no: '03', en: 'DESIGN', title: '設計與報價', duration: '2–4 週',
+    desc: '提出平面配置與明細報價，每一項目都列清楚。',
+    items: ['平面配置與設計提案', '逐項列出材料、規格與工法的明細報價', '依回饋修改直到定案'],
+  },
+  {
+    no: '04', en: 'BUILD', title: '簽約施工', duration: '依工程規模',
+    desc: '依工序施工，各階段拍照回報進度。',
+    items: ['簽訂工程合約，約定付款節點', '依工序施工，每個階段拍照回報', '重要節點邀請業主到場確認'],
+  },
+  {
+    no: '05', en: 'DELIVER', title: '驗收與保固', duration: '交屋後保固',
+    desc: '逐項驗收、交付完工資料，享有保固服務。',
+    items: ['逐項驗收，缺失改善完成才交屋', '交付完工照片與管線配置圖', '保固期內的施工問題負責處理'],
+  },
 ];
 
 export const details = [

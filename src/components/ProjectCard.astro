@@ -54,9 +54,9 @@ const cat = categoryLabels[project.category];
   .card__status {
     position: absolute; top: 12px; left: 12px;
     font-size: 14px; font-weight: 500; padding: 2px 10px;
-    background: rgba(26, 26, 26, .82); border: 1px solid var(--line-strong); color: var(--gold);
+    background: rgba(var(--bg-rgb), .82); border: 1px solid var(--line-strong); color: var(--gold-text);
   }
-  .card__status.in_progress { color: var(--amber); border-color: var(--amber); }
+  .card__status.in_progress { color: var(--amber-text); border-color: var(--amber-text); }
   .card__status.in_progress::before {
     content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%;
     background: var(--amber); margin-right: 6px; vertical-align: middle;
@@ -65,7 +65,7 @@ const cat = categoryLabels[project.category];
   @keyframes pulse { 50% { opacity: .25; } }
 
   .card__body { padding: 20px 20px 22px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
-  .card__meta { display: flex; justify-content: space-between; font-size: 13px; color: var(--gold); }
+  .card__meta { display: flex; justify-content: space-between; font-size: 13px; color: var(--gold-text); }
   .card__title { font-size: 20px; font-weight: 700; }
   .card__specs {
     display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 8px;

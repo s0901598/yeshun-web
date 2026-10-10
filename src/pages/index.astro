@@ -86,10 +86,13 @@ const featured = await getFeaturedProjects(4);
   <!-- 服務流程 -->
   <section class="section" id="process">
     <div class="container">
-      <div class="section-head reveal">
-        <p class="eyebrow">PROCESS</p>
-        <h2 class="h-section">服務流程</h2>
-        <p class="lead">從第一通電話到完工保固，五個步驟，每一步都清楚交代。</p>
+      <div class="section-head section-head--split reveal">
+        <div>
+          <p class="eyebrow">PROCESS</p>
+          <h2 class="h-section">服務流程</h2>
+          <p class="lead">從第一通電話到完工保固，五個步驟，每一步都清楚交代。</p>
+        </div>
+        <a href="/process" class="btn btn--ghost">看完整流程 <span class="arrow">→</span></a>
       </div>
       <ProcessSteps />
     </div>
@@ -110,10 +113,16 @@ const featured = await getFeaturedProjects(4);
   .hero__bg::after {
     content: ''; position: absolute; inset: 0;
     background:
-      linear-gradient(180deg, rgba(26,26,26,.55) 0%, rgba(26,26,26,.35) 40%, var(--bg) 100%),
-      linear-gradient(90deg, rgba(26,26,26,.75), transparent 70%);
+      linear-gradient(180deg, rgba(var(--bg-rgb), .55) 0%, rgba(var(--bg-rgb), .35) 40%, var(--bg) 100%),
+      linear-gradient(90deg, rgba(var(--bg-rgb), .75), transparent 70%);
   }
   @keyframes drift { to { transform: scale(1.08); } }
+  /* 淺色模式：照片蓋上較厚的淺色遮罩，深色文字才清楚 */
+  :global([data-theme='light']) .hero__bg::after {
+    background:
+      linear-gradient(180deg, rgba(var(--bg-rgb), .78) 0%, rgba(var(--bg-rgb), .62) 45%, var(--bg) 100%),
+      linear-gradient(90deg, rgba(var(--bg-rgb), .9), rgba(var(--bg-rgb), .2) 75%);
+  }
   .hero__grid {
     position: absolute; inset: 0; z-index: -1; opacity: .5;
     mask-image: linear-gradient(180deg, transparent, #000 30%, #000 70%, transparent);
@@ -133,7 +142,7 @@ const featured = await getFeaturedProjects(4);
   .stats__item { padding: 28px 8px; text-align: center; border-bottom: 1px solid var(--line); }
   .stats__item:nth-child(odd) { border-right: 1px solid var(--line); }
   .stats__item:nth-last-child(-n + 2) { border-bottom: 0; }
-  .stats__value { font-size: clamp(32px, 5vw, 48px); color: var(--gold); line-height: 1.1; font-weight: 500; }
+  .stats__value { font-size: clamp(32px, 5vw, 48px); color: var(--gold-text); line-height: 1.1; font-weight: 500; }
   .stats__value small { font-size: .45em; margin-left: 4px; color: var(--text-2); font-family: var(--font-sans); }
   .stats__label { font-size: 16px; color: var(--text-2); margin-top: 6px; }
   .stats__note { text-align: center; padding-bottom: 12px; }
@@ -161,8 +170,8 @@ const featured = await getFeaturedProjects(4);
 
   /* 細節 */
   .details { display: grid; grid-template-columns: 1fr; gap: 16px; }
-  .detail { background: rgba(43, 43, 43, .7); border: 1px solid var(--line); padding: 24px; }
-  .detail__code { font-size: 13px; color: var(--gold); }
+  .detail { background: rgba(var(--surface-rgb), .7); border: 1px solid var(--line); padding: 24px; }
+  .detail__code { font-size: 13px; color: var(--gold-text); }
   .detail__title { font-size: 22px; margin: 6px 0 8px; }
   .detail__text { color: var(--text-2); font-size: 17px; }
   @media (min-width: 768px) { .details { grid-template-columns: repeat(2, 1fr); gap: 24px; } }
