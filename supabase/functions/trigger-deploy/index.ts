@@ -23,7 +23,8 @@ Deno.serve(async (req) => {
   const { data: isAdmin, error } = await supabase.rpc('is_admin');
   if (error || !isAdmin) return json(403, { error: 'forbidden' });
 
-  const token = Deno.env.get('GITHUB_DEPLOY_TOKEN');
+  // 去掉貼上時可能多出的空白或換行
+  const token = Deno.env.get('GITHUB_DEPLOY_TOKEN')?.trim();
   if (!token) return json(503, { error: 'not_configured' });
 
   const res = await fetch(`https://api.github.com/repos/${REPO}/dispatches`, {
