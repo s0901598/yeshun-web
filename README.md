@@ -4,8 +4,23 @@
 
 ## 技術
 - Astro（靜態輸出），部署在 GitHub Pages：https://s0901598.github.io/yeshun-web/
+- 內容（案例、施工進度、照片、注重的細節、服務流程）存在 Supabase 專案 `yeshun-web`（東京機房，ref `tstqnfsnjefuwdkywxke`）。注意：同一個帳號下還有另一個無關的專案，不要混用
+- 後台：https://s0901598.github.io/yeshun-web/admin/ （Preact，登入後直接讀寫資料庫）
 - 站內連結和圖片一律用 `src/lib/url.ts` 的 `u()` 包起來，才會自動加上 `/yeshun-web` 根路徑；換成公司網域時改 `astro.config.mjs` 的 `site` 與 `base` 即可
-- 資料：目前寫在 `src/data/`，之後改接 Supabase（資料庫＋照片空間＋後台登入）
+
+## 內容更新流程
+```
+後台修改／發布 → Supabase 函式 trigger-deploy（確認是管理員）
+  → GitHub Actions「部署官網」重新從資料庫打包 → GitHub Pages（約 1–2 分鐘）
+```
+- 推程式碼到 main 也會自動部署；`npm run deploy` 可以手動觸發一次。
+- 自動更新需要在 Supabase → Edge Functions → Secrets 設定 `GITHUB_DEPLOY_TOKEN`（只對 yeshun-web 有 Contents 讀寫權限的 GitHub token）。
+
+## 資料庫與權限
+- 結構在 `supabase/migrations/`，用 `npx supabase db push` 套用。
+- 訪客（官網）只讀得到 `published = true` 的內容；只有 `admins` 名單裡的帳號能新增、修改、刪除與上傳照片。
+- 已關閉自行註冊，後台帳號只能由管理者建立。
+- `.env`（不會上傳）存放資料庫密碼、最高權限金鑰與後台初始密碼。
 
 ## 指令
 | 指令 | 說明 |
@@ -14,7 +29,8 @@
 | `npm run dev` | 本機開發，網址 http://localhost:4321 |
 | `npm run build` | 打包到 `dist/` |
 | `npm run preview` | 預覽打包結果，網址 http://localhost:4321/yeshun-web/ |
-| `npm run deploy` | 打包並部署到 GitHub Pages（推到 `gh-pages` 分支） |
+| `npm run deploy` | 手動觸發 GitHub Actions 重新部署官網 |
+| `npm run seed` | （只在初次建置用）把 `scripts/sample-data.ts` 的示意內容匯入資料庫，會覆蓋現有內容 |
 
 ## 頁面
 | 網址 | 內容 |
@@ -28,18 +44,18 @@
 | `/contact` | 聯絡我們：聯絡方式、需求表單、地圖 |
 
 ## 要改內容去哪裡
-| 內容 | 檔案 |
+| 內容 | 在哪裡改 |
 |---|---|
-| 公司資料、電話、LINE、地址、數據、服務流程、細節 | `src/data/site.ts` |
-| 案例、施工階段、照片 | `src/data/projects.ts` |
-| 照片檔 | `public/images/` |
+| 案例、施工進度、照片、注重的細節、服務流程 | 後台 `/admin/` |
+| 公司資料、電話、LINE、地址、首頁數據 | `src/data/site.ts` |
 
 - 標了 `todo: true` 的欄位是示意內容，頁面上會顯示橘色「待補」標籤。
 - 全部換成真實資料後，把 `src/data/site.ts` 的 `showTodo` 改成 `false`，所有「待補」標籤就會消失。
 
 ## 發布規則
-- 只有 `published: true` 的案例和照片會出現在官網，草稿不會產生頁面。
-- 讀資料的入口只有 `src/lib/data.ts`，之後接 Supabase 時只要改這支檔案。
+- 案例、照片：上傳後是草稿，按「發布」才公開；發布案例前必須有封面。
+- 細節、流程：關掉「顯示在官網」可以暫時隱藏。
+- 官網讀資料的入口只有 `src/lib/data.ts`。
 
 ## 淺色／深色模式
 - 預設跟隨使用者的系統設定；頁首 ☀/☾ 按鈕可以手動切換，網站會記住選擇。
@@ -55,6 +71,4 @@
 
 ## 下一步
 1. 換上真實內容（公司資料、登記字號、Logo、真實案例照片）
-2. 建立 Supabase 資料表，官網改從資料庫讀取
-3. 部署到 Cloudflare Pages
-4. 第二階段：手機上傳照片的後台（上傳 → 草稿 → 按發布才公開）
+2. 買公司網域並掛到 GitHub Pages
