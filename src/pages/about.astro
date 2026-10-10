@@ -1,4 +1,5 @@
 ---
+import { u } from '../lib/url';
 import Base from '../layouts/Base.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import Todo from '../components/Todo.astro';
@@ -13,7 +14,7 @@ const services = ['住宅翻新與新屋裝修', '商業空間（店面、餐飲
 ---
 <Base title="關於業順" description={site.intro}>
   <section class="page-hero">
-    <div class="page-hero__bg" aria-hidden="true"><img src="/images/detail-plan.webp" alt="" /></div>
+    <div class="page-hero__bg" aria-hidden="true"><img src={u('/images/detail-plan.webp')} alt="" /></div>
     <div class="blueprint blueprint-overlay" aria-hidden="true"></div>
     <div class="container">
       <p class="eyebrow">ABOUT</p>
@@ -35,7 +36,7 @@ const services = ['住宅翻新與新屋裝修', '商業空間（店面、餐飲
         </dl>
       </div>
       <div class="photo corners reveal">
-        <img src="/images/case-colonnade.webp" alt="業順營造施工空間示意" loading="lazy" />
+        <img src={u('/images/case-colonnade.webp')} alt="業順營造施工空間示意" loading="lazy" />
         {site.showTodo && <span class="photo__tag mono">IMG / 待補公司照片</span>}
       </div>
     </div>

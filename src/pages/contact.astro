@@ -1,4 +1,5 @@
 ---
+import { u } from '../lib/url';
 import Base from '../layouts/Base.astro';
 import Todo from '../components/Todo.astro';
 import { site } from '../data/site';
@@ -12,7 +13,7 @@ const channels = [
 ---
 <Base title="聯絡我們" description="預約業順營造丈量與諮詢，電話、LINE、Email 皆可聯絡。">
   <section class="page-hero">
-    <div class="page-hero__bg" aria-hidden="true"><img src="/images/detail-tools.webp" alt="" /></div>
+    <div class="page-hero__bg" aria-hidden="true"><img src={u('/images/detail-tools.webp')} alt="" /></div>
     <div class="blueprint blueprint-overlay" aria-hidden="true"></div>
     <div class="container">
       <p class="eyebrow">CONTACT</p>

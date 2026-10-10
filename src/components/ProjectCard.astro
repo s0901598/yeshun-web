@@ -1,10 +1,11 @@
 ---
+import { u } from '../lib/url';
 import { categoryLabels, statusLabels, type Project } from '../data/projects';
 interface Props { project: Project; index: number }
 const { project, index } = Astro.props;
 const cat = categoryLabels[project.category];
 ---
-<a href={`/projects/${project.slug}`} class="card" data-category={project.category}>
+<a href={u(`/projects/${project.slug}`)} class="card" data-category={project.category}>
   <div class="card__media">
     <img src={project.cover} alt={project.title} loading="lazy" decoding="async" />
     <span class="card__scan" aria-hidden="true"></span>

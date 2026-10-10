@@ -1,4 +1,5 @@
 ---
+import { u } from '../lib/url';
 import Base from '../layouts/Base.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import ProcessSteps from '../components/ProcessSteps.astro';
@@ -13,7 +14,7 @@ const featured = await getFeaturedProjects(4);
   <!-- 主視覺 -->
   <section class="hero">
     <div class="hero__bg" aria-hidden="true">
-      <img src="/images/hero-site.webp" alt="" fetchpriority="high" />
+      <img src={u('/images/hero-site.webp')} alt="" fetchpriority="high" />
     </div>
     <div class="hero__grid blueprint" aria-hidden="true"></div>
     <div class="container hero__inner">
@@ -21,8 +22,8 @@ const featured = await getFeaturedProjects(4);
       <h1 class="h-display hero__title">{site.slogan}</h1>
       <p class="lead">住宅、商業、辦公與公共空間的室內裝修設計與施工。每一道工序拍照記錄，讓業主看得見施工的每一步。</p>
       <div class="hero__actions">
-        <a href="/projects" class="btn btn--primary">看案例作品 <span class="arrow">→</span></a>
-        <a href="/contact" class="btn btn--ghost">預約諮詢</a>
+        <a href={u('/projects')} class="btn btn--primary">看案例作品 <span class="arrow">→</span></a>
+        <a href={u('/contact')} class="btn btn--ghost">預約諮詢</a>
       </div>
       <p class="hero__coord mono" aria-hidden="true">N 25.0912° / E 121.4666°　—　NEW TAIPEI, TAIWAN</p>
     </div>
@@ -52,7 +53,7 @@ const featured = await getFeaturedProjects(4);
           <h2 class="h-section">精選案例<Todo label="示意案例" /></h2>
           <p class="lead">從老屋翻新到商業空間，每個案子都附上完整的施工過程。</p>
         </div>
-        <a href="/projects" class="btn btn--ghost">全部案例 <span class="arrow">→</span></a>
+        <a href={u('/projects')} class="btn btn--ghost">全部案例 <span class="arrow">→</span></a>
       </div>
       <ul class="featured">
         {featured.map((pj, i) => <li class="reveal"><ProjectCard project={pj} index={i} /></li>)}
@@ -69,7 +70,7 @@ const featured = await getFeaturedProjects(4);
           <h2 class="h-section">看不見的地方，才是重點</h2>
           <p class="lead">完工後被封起來的防水、管線與結構，決定了房子能住多久。</p>
         </div>
-        <a href="/details" class="btn btn--ghost">了解更多 <span class="arrow">→</span></a>
+        <a href={u('/details')} class="btn btn--ghost">了解更多 <span class="arrow">→</span></a>
       </div>
       <ul class="details">
         {details.slice(0, 4).map((d) => (
@@ -92,7 +93,7 @@ const featured = await getFeaturedProjects(4);
           <h2 class="h-section">服務流程</h2>
           <p class="lead">從第一通電話到完工保固，五個步驟，每一步都清楚交代。</p>
         </div>
-        <a href="/process" class="btn btn--ghost">看完整流程 <span class="arrow">→</span></a>
+        <a href={u('/process')} class="btn btn--ghost">看完整流程 <span class="arrow">→</span></a>
       </div>
       <ProcessSteps />
     </div>

@@ -3,7 +3,8 @@
 給有營造、裝修需求的業主看的公司官網。舊站 `yeshuncompany` 保留不動，這是重新製作的新版。
 
 ## 技術
-- Astro（靜態輸出，之後部署到 Cloudflare Pages）
+- Astro（靜態輸出），部署在 GitHub Pages：https://s0901598.github.io/yeshun-web/
+- 站內連結和圖片一律用 `src/lib/url.ts` 的 `u()` 包起來，才會自動加上 `/yeshun-web` 根路徑；換成公司網域時改 `astro.config.mjs` 的 `site` 與 `base` 即可
 - 資料：目前寫在 `src/data/`，之後改接 Supabase（資料庫＋照片空間＋後台登入）
 
 ## 指令
@@ -12,7 +13,8 @@
 | `npm install` | 安裝套件 |
 | `npm run dev` | 本機開發，網址 http://localhost:4321 |
 | `npm run build` | 打包到 `dist/` |
-| `npm run preview` | 預覽打包結果 |
+| `npm run preview` | 預覽打包結果，網址 http://localhost:4321/yeshun-web/ |
+| `npm run deploy` | 打包並部署到 GitHub Pages（推到 `gh-pages` 分支） |
 
 ## 頁面
 | 網址 | 內容 |

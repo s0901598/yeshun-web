@@ -1,4 +1,5 @@
 ---
+import { u } from '../lib/url';
 import Base from '../layouts/Base.astro';
 ---
 <Base title="找不到頁面">
@@ -9,8 +10,8 @@ import Base from '../layouts/Base.astro';
       <h1 class="h-display">找不到這個頁面</h1>
       <p class="lead">網址可能有誤，或這個案例已經下架。</p>
       <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:32px">
-        <a href="/" class="btn btn--primary">回首頁</a>
-        <a href="/projects" class="btn btn--ghost">看案例作品</a>
+        <a href={u('/')} class="btn btn--primary">回首頁</a>
+        <a href={u('/projects')} class="btn btn--ghost">看案例作品</a>
       </div>
     </div>
   </section>

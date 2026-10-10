@@ -1,4 +1,5 @@
 ---
+import { u } from '../../lib/url';
 import Base from '../../layouts/Base.astro';
 import ContactCTA from '../../components/ContactCTA.astro';
 import ProjectCard from '../../components/ProjectCard.astro';
@@ -28,7 +29,7 @@ const others = related.length ? related : all.filter((pj) => pj.slug !== project
 <Base title={project.title} description={project.summary}>
   <section class="intro">
     <div class="container">
-      <a href="/projects" class="back mono">← ALL PROJECTS</a>
+      <a href={u('/projects')} class="back mono">← ALL PROJECTS</a>
       <p class="eyebrow">{cat.en} · {statusLabels[project.status]}</p>
       <h1 class="title">{project.title}<Todo label="示意案例" /></h1>
 
