@@ -9,8 +9,8 @@
   --gold: #c3a27f;
   --amber: #d7942d;
   --text: #f2efea;
-  --text-2: #b9b4ac;
-  --text-3: #8a857e;
+  --text-2: #d2cdc5;
+  --text-3: #a7a29a;
 
   --font-sans: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
@@ -36,11 +36,12 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1.75;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
+@media (max-width: 767px) { body { font-size: 17px; } }
 img { display: block; max-width: 100%; }
 a { color: inherit; text-decoration: none; }
 ul, ol { list-style: none; }
@@ -72,8 +73,8 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .mono { font-family: var(--font-mono); letter-spacing: 0.08em; }
 .eyebrow {
   font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0.2em;
+  font-size: 14px;
+  letter-spacing: 0.18em;
   color: var(--gold);
   display: inline-flex;
   align-items: center;
@@ -82,9 +83,9 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 .eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--gold); }
 h1, h2, h3 { font-weight: 700; line-height: 1.3; letter-spacing: 0.02em; }
-.h-display { font-size: clamp(32px, 7vw, 64px); }
-.h-section { font-size: clamp(26px, 4vw, 40px); margin-top: 12px; }
-.lead { color: var(--text-2); font-size: clamp(15px, 1.6vw, 17px); max-width: 640px; margin-top: 16px; }
+.h-display { font-size: clamp(36px, 7.5vw, 68px); }
+.h-section { font-size: clamp(28px, 4.4vw, 44px); margin-top: 12px; }
+.lead { color: var(--text-2); font-size: clamp(17px, 1.8vw, 20px); max-width: 720px; margin-top: 16px; }
 
 .section-head { margin-bottom: 40px; }
 @media (min-width: 768px) {
@@ -94,9 +95,9 @@ h1, h2, h3 { font-weight: 700; line-height: 1.3; letter-spacing: 0.02em; }
 /* 按鈕 */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  min-height: 48px; padding: 0 24px;
+  min-height: 52px; padding: 0 28px;
   border: 1px solid var(--gold);
-  font-size: 15px; font-weight: 500; letter-spacing: 0.06em;
+  font-size: 17px; font-weight: 500; letter-spacing: 0.06em;
   transition: background-color .25s, color .25s, border-color .25s;
 }
 .btn--primary { background: var(--gold); color: #1a1a1a; }
@@ -119,7 +120,7 @@ h1, h2, h3 { font-weight: 700; line-height: 1.3; letter-spacing: 0.02em; }
 .todo {
   display: inline-block; vertical-align: middle;
   margin-left: 8px; padding: 0 6px;
-  font-family: var(--font-mono); font-size: 11px; line-height: 18px; font-weight: 500;
+  font-family: var(--font-mono); font-size: 12px; line-height: 20px; font-weight: 500;
   color: #1a1a1a; background: var(--amber); border-radius: 2px;
   letter-spacing: 0.05em;
 }
@@ -143,3 +144,8 @@ h1, h2, h3 { font-weight: 700; line-height: 1.3; letter-spacing: 0.02em; }
 
 /* 手機選單打開時鎖住背景捲動 */
 body.menu-open { overflow: hidden; }
+
+/* 手機版英文小標籤收窄字距，避免斷行 */
+@media (max-width: 767px) {
+  .eyebrow { font-size: 13px; letter-spacing: 0.12em; }
+}

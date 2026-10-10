@@ -185,7 +185,7 @@ const others = related.length ? related : all.filter((pj) => pj.slug !== project
 
 <style>
   .intro { padding: calc(var(--header-h) + 32px) 0 32px; }
-  .back { display: block; width: fit-content; font-size: 11px; color: var(--text-3); margin-bottom: 24px; }
+  .back { display: block; width: fit-content; font-size: 13px; color: var(--text-3); margin-bottom: 24px; }
   .back:hover { color: var(--gold); }
   .title { font-size: clamp(28px, 5vw, 48px); margin-top: 12px; }
 
@@ -194,8 +194,8 @@ const others = related.length ? related : all.filter((pj) => pj.slug !== project
     margin-top: 28px; border-top: 1px solid var(--line); border-left: 1px solid var(--line);
   }
   .specs div { padding: 12px 14px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-  .specs dt { font-size: 9px; color: var(--text-3); }
-  .specs dd { font-size: 14px; color: var(--text); font-family: var(--font-sans); letter-spacing: 0; }
+  .specs dt { font-size: 12px; color: var(--text-3); }
+  .specs dd { font-size: 16px; color: var(--text); font-family: var(--font-sans); letter-spacing: 0; }
   .specs dd.in_progress { color: var(--amber); }
   .specs dd.completed { color: var(--gold); }
   .specs div:last-child { grid-column: 1 / -1; }
@@ -229,10 +229,10 @@ const others = related.length ? related : all.filter((pj) => pj.slug !== project
   }
 
   .about__grid { display: grid; gap: 40px; }
-  .about__text { color: var(--text-2); font-size: 17px; margin-top: 16px; }
+  .about__text { color: var(--text-2); font-size: 19px; margin-top: 16px; }
   .highlights { margin-top: 16px; border-top: 1px solid var(--line); }
-  .highlights li { display: flex; gap: 16px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 16px; }
-  .highlights span { font-size: 12px; color: var(--gold); }
+  .highlights li { display: flex; gap: 16px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 18px; }
+  .highlights span { font-size: 14px; color: var(--gold); }
   @media (min-width: 768px) { .about__grid { grid-template-columns: 1.4fr 1fr; gap: 64px; } }
 
   /* 時間軸 */
@@ -251,11 +251,11 @@ const others = related.length ? related : all.filter((pj) => pj.slug !== project
   .stage.is-current .stage__node { border-color: var(--amber); box-shadow: 0 0 0 4px rgba(215, 148, 45, .2), 0 0 18px rgba(215, 148, 45, .6); }
   .stage.is-current .stage__node::after { background: var(--amber); animation: pulse 1.6s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: .3; } }
-  .stage__date { font-size: 12px; color: var(--gold); }
-  .stage__name { font-size: 22px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
-  .stage__name .mono { font-size: 11px; color: var(--text-3); font-weight: 400; }
-  .stage__live { font-style: normal; font-size: 12px; font-weight: 500; color: var(--amber); border: 1px solid var(--amber); padding: 0 8px; }
-  .stage__note { color: var(--text-2); margin-top: 6px; font-size: 15px; }
+  .stage__date { font-size: 14px; color: var(--gold); }
+  .stage__name { font-size: 24px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+  .stage__name .mono { font-size: 13px; color: var(--text-3); font-weight: 400; }
+  .stage__live { font-style: normal; font-size: 14px; font-weight: 500; color: var(--amber); border: 1px solid var(--amber); padding: 0 8px; }
+  .stage__note { color: var(--text-2); margin-top: 6px; font-size: 17px; }
   .stage__photos {
     display: grid; grid-auto-flow: column; grid-auto-columns: 60%; gap: 10px; margin-top: 16px;
     overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
@@ -292,7 +292,7 @@ const others = related.length ? related : all.filter((pj) => pj.slug !== project
   .lightbox::backdrop { background: rgba(0, 0, 0, .8); }
   .lightbox figure { max-width: min(1200px, 92vw); text-align: center; }
   .lightbox img { max-width: 100%; max-height: 78dvh; margin: 0 auto; object-fit: contain; }
-  .lightbox figcaption { font-size: 12px; color: var(--text-2); margin-top: 12px; padding: 0 16px; }
+  .lightbox figcaption { font-size: 14px; color: var(--text-2); margin-top: 12px; padding: 0 16px; }
   .lightbox__close { position: absolute; top: 12px; right: 12px; width: 48px; height: 48px; font-size: 20px; color: var(--gold); }
   .lightbox__nav {
     position: absolute; top: 50%; transform: translateY(-50%);

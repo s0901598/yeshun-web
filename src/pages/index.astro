@@ -121,7 +121,7 @@ const featured = await getFeaturedProjects(4);
   }
   .hero__title { margin-top: 16px; max-width: 12em; }
   .hero__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
-  .hero__coord { margin-top: 40px; font-size: 10px; color: var(--text-3); }
+  .hero__coord { margin-top: 40px; font-size: 12px; color: var(--text-3); }
   @media (max-width: 767px) {
     .hero__actions { flex-direction: column; }
     .hero__actions .btn { width: 100%; }
@@ -135,7 +135,7 @@ const featured = await getFeaturedProjects(4);
   .stats__item:nth-last-child(-n + 2) { border-bottom: 0; }
   .stats__value { font-size: clamp(32px, 5vw, 48px); color: var(--gold); line-height: 1.1; font-weight: 500; }
   .stats__value small { font-size: .45em; margin-left: 4px; color: var(--text-2); font-family: var(--font-sans); }
-  .stats__label { font-size: 14px; color: var(--text-2); margin-top: 6px; }
+  .stats__label { font-size: 16px; color: var(--text-2); margin-top: 6px; }
   .stats__note { text-align: center; padding-bottom: 12px; }
   .stats__note:empty { display: none; }
   @media (min-width: 768px) {
@@ -162,9 +162,9 @@ const featured = await getFeaturedProjects(4);
   /* 細節 */
   .details { display: grid; grid-template-columns: 1fr; gap: 16px; }
   .detail { background: rgba(43, 43, 43, .7); border: 1px solid var(--line); padding: 24px; }
-  .detail__code { font-size: 11px; color: var(--gold); }
-  .detail__title { font-size: 20px; margin: 6px 0 8px; }
-  .detail__text { color: var(--text-2); font-size: 15px; }
+  .detail__code { font-size: 13px; color: var(--gold); }
+  .detail__title { font-size: 22px; margin: 6px 0 8px; }
+  .detail__text { color: var(--text-2); font-size: 17px; }
   @media (min-width: 768px) { .details { grid-template-columns: repeat(2, 1fr); gap: 24px; } }
   @media (min-width: 1200px) { .details { grid-template-columns: repeat(4, 1fr); } }
 </style>

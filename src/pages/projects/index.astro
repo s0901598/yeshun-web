@@ -87,11 +87,11 @@ const filters: { key: Category | 'all'; label: string; count: number }[] = [
   .filters::-webkit-scrollbar { display: none; }
   .filter {
     flex: none; display: inline-flex; align-items: center; gap: 8px;
-    min-height: 44px; padding: 0 18px;
-    border: 1px solid var(--line); color: var(--text-2); font-size: 15px;
+    min-height: 48px; padding: 0 20px;
+    border: 1px solid var(--line); color: var(--text-2); font-size: 17px;
     transition: border-color .2s, color .2s, background-color .2s;
   }
-  .filter span { font-size: 11px; color: var(--text-3); }
+  .filter span { font-size: 13px; color: var(--text-3); }
   .filter:hover { border-color: var(--line-strong); color: var(--text); }
   .filter.is-active { border-color: var(--gold); color: var(--gold); background: rgba(195, 162, 127, .08); }
   .filter.is-active span { color: var(--gold); }
