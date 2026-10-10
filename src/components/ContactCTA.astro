@@ -1,0 +1,25 @@
+---
+import { site } from '../data/site';
+---
+<section class="cta section blueprint">
+  <div class="container cta__inner reveal">
+    <p class="eyebrow">CONTACT</p>
+    <h2 class="h-section">有裝修或營造的需求？<br />先聊聊，再決定。</h2>
+    <p class="lead">告訴我們空間現況、預算與時程，我們會安排丈量與初步建議，諮詢不收費。</p>
+    <div class="cta__actions">
+      <a href="/contact" class="btn btn--primary">預約諮詢 <span class="arrow">→</span></a>
+      <a href={site.phone.href} class="btn btn--ghost">撥打 {site.phone.value}</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cta { border-top: 1px solid var(--line); background-color: var(--bg-2); text-align: center; }
+  .cta__inner { display: flex; flex-direction: column; align-items: center; }
+  .cta .lead { margin-left: auto; margin-right: auto; }
+  .cta__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 32px; }
+  @media (max-width: 767px) {
+    .cta__actions { flex-direction: column; width: 100%; }
+    .cta__actions .btn { width: 100%; }
+  }
+</style>

@@ -1,0 +1,107 @@
+---
+import Base from '../../layouts/Base.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import ContactCTA from '../../components/ContactCTA.astro';
+import Todo from '../../components/Todo.astro';
+import { categoryLabels, type Category } from '../../data/projects';
+import { getProjects } from '../../lib/data';
+
+const projects = await getProjects();
+const filters: { key: Category | 'all'; label: string; count: number }[] = [
+  { key: 'all', label: '全部', count: projects.length },
+  ...(Object.keys(categoryLabels) as Category[]).map((key) => ({
+    key,
+    label: categoryLabels[key].zh,
+    count: projects.filter((pj) => pj.category === key).length,
+  })),
+];
+---
+<Base title="案例作品" description="業順營造過往的室內裝修與營造案例，附完整施工進度記錄。">
+  <section class="page-hero">
+    <div class="page-hero__bg" aria-hidden="true"><img src="/images/stage-site.webp" alt="" /></div>
+    <div class="blueprint blueprint-overlay" aria-hidden="true"></div>
+    <div class="container">
+      <p class="eyebrow">PROJECTS</p>
+      <h1 class="h-display">案例作品<Todo label="示意案例" /></h1>
+      <p class="lead">每個案子都附上從拆除到完工的施工記錄，看得到過程，才放心把空間交給我們。</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="filters" role="group" aria-label="依分類篩選">
+        {filters.map((f, i) => (
+          <button type="button" class:list={['filter', { 'is-active': i === 0 }]} data-filter={f.key} aria-pressed={i === 0 ? 'true' : 'false'}>
+            {f.label}<span class="mono">{String(f.count).padStart(2, '0')}</span>
+          </button>
+        ))}
+      </div>
+
+      <ul class="grid" data-grid>
+        {projects.map((pj, i) => (
+          <li data-category={pj.category}><ProjectCard project={pj} index={i} /></li>
+        ))}
+      </ul>
+      <p class="empty" data-empty hidden>這個分類目前還沒有公開的案例。</p>
+    </div>
+  </section>
+
+  <ContactCTA />
+</Base>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-filter]');
+  const items = document.querySelectorAll<HTMLElement>('[data-grid] > li');
+  const empty = document.querySelector<HTMLElement>('[data-empty]');
+
+  const apply = (key: string) => {
+    let shown = 0;
+    items.forEach((li) => {
+      const match = key === 'all' || li.dataset.category === key;
+      li.hidden = !match;
+      if (match) shown++;
+    });
+    buttons.forEach((b) => {
+      const active = b.dataset.filter === key;
+      b.classList.toggle('is-active', active);
+      b.setAttribute('aria-pressed', String(active));
+    });
+    if (empty) empty.hidden = shown > 0;
+    const url = new URL(location.href);
+    key === 'all' ? url.searchParams.delete('cat') : url.searchParams.set('cat', key);
+    history.replaceState(null, '', url);
+  };
+
+  buttons.forEach((b) => b.addEventListener('click', () => apply(b.dataset.filter!)));
+  const initial = new URLSearchParams(location.search).get('cat');
+  if (initial && [...buttons].some((b) => b.dataset.filter === initial)) apply(initial);
+</script>
+
+<style>
+  .filters {
+    display: flex; gap: 8px; margin-bottom: 32px;
+    overflow-x: auto; scrollbar-width: none;
+    margin-left: calc(var(--gutter) * -1); margin-right: calc(var(--gutter) * -1);
+    padding: 0 var(--gutter);
+  }
+  .filters::-webkit-scrollbar { display: none; }
+  .filter {
+    flex: none; display: inline-flex; align-items: center; gap: 8px;
+    min-height: 44px; padding: 0 18px;
+    border: 1px solid var(--line); color: var(--text-2); font-size: 15px;
+    transition: border-color .2s, color .2s, background-color .2s;
+  }
+  .filter span { font-size: 11px; color: var(--text-3); }
+  .filter:hover { border-color: var(--line-strong); color: var(--text); }
+  .filter.is-active { border-color: var(--gold); color: var(--gold); background: rgba(195, 162, 127, .08); }
+  .filter.is-active span { color: var(--gold); }
+
+  .grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+  .grid > li[hidden] { display: none; }
+  @media (min-width: 768px) {
+    .filters { margin-left: 0; margin-right: 0; padding: 0; flex-wrap: wrap; }
+    .grid { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  }
+  @media (min-width: 1200px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+  .empty { color: var(--text-3); text-align: center; padding: 48px 0; }
+</style>

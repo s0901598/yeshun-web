@@ -1,0 +1,304 @@
+---
+import Base from '../../layouts/Base.astro';
+import ContactCTA from '../../components/ContactCTA.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import Todo from '../../components/Todo.astro';
+import { categoryLabels, statusLabels, type Project } from '../../data/projects';
+import { getProjects } from '../../lib/data';
+
+export async function getStaticPaths() {
+  const all = await getProjects();
+  return all.map((project) => ({ params: { slug: project.slug }, props: { project, all } }));
+}
+
+interface Props { project: Project; all: Project[] }
+const { project, all } = Astro.props;
+const cat = categoryLabels[project.category];
+const fmt = (d: string) => d.replaceAll('-', '.');
+
+// 主圖：封面 + 最後一個階段（通常是完工）的照片
+const lastStage = project.stages.at(-1);
+const gallery = [
+  { url: project.cover, caption: project.title },
+  ...(lastStage?.photos ?? []).filter((ph) => ph.url !== project.cover),
+];
+const related = all.filter((pj) => pj.slug !== project.slug && pj.category === project.category).slice(0, 3);
+const others = related.length ? related : all.filter((pj) => pj.slug !== project.slug).slice(0, 3);
+---
+<Base title={project.title} description={project.summary}>
+  <section class="intro">
+    <div class="container">
+      <a href="/projects" class="back mono">← ALL PROJECTS</a>
+      <p class="eyebrow">{cat.en} · {statusLabels[project.status]}</p>
+      <h1 class="title">{project.title}<Todo label="示意案例" /></h1>
+
+      <dl class="specs mono">
+        <div><dt>CATEGORY</dt><dd>{cat.zh}</dd></div>
+        <div><dt>LOCATION</dt><dd>{project.location}</dd></div>
+        <div><dt>AREA</dt><dd>{project.areaPing} 坪</dd></div>
+        <div><dt>DURATION</dt><dd>{project.durationDays} 天</dd></div>
+        <div><dt>STATUS</dt><dd class:list={[project.status]}>{statusLabels[project.status]}</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- 主圖 -->
+  <section class="gallery-wrap">
+    <div class="container">
+      <div class="gallery" style={`--thumbs: ${Math.max(Math.min(gallery.length - 1, 3), 1)}`}>
+        {gallery.map((ph, i) => (
+          <button type="button" class:list={['gallery__item', 'corners', { 'gallery__item--main': i === 0 }]} data-lightbox={ph.url} data-caption={ph.caption}>
+            <img src={ph.url} alt={ph.caption} loading={i === 0 ? 'eager' : 'lazy'} />
+          </button>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- 案例說明 -->
+  <section class="section about">
+    <div class="container about__grid">
+      <div class="reveal">
+        <p class="eyebrow">OVERVIEW</p>
+        <h2 class="h-section">案例說明</h2>
+        <p class="about__text">{project.summary}</p>
+      </div>
+      {project.highlights.length > 0 && (
+        <div class="reveal">
+          <p class="eyebrow">KEY POINTS</p>
+          <ul class="highlights">
+            {project.highlights.map((h, i) => (
+              <li><span class="mono">{String(i + 1).padStart(2, '0')}</span>{h}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  </section>
+
+  <!-- 施工進度時間軸 -->
+  {project.stages.length > 0 && (
+    <section class="section section--alt blueprint--faint">
+      <div class="container">
+        <div class="section-head reveal">
+          <p class="eyebrow">CONSTRUCTION LOG</p>
+          <h2 class="h-section">施工進度</h2>
+          <p class="lead">每個階段的現場照片，記錄完工後看不見的工序。</p>
+        </div>
+
+        <ol class="timeline">
+          {project.stages.map((stage, i) => {
+            const isCurrent = project.status === 'in_progress' && i === project.stages.length - 1;
+            return (
+              <li class:list={['stage', 'reveal', { 'is-current': isCurrent }]}>
+                <span class="stage__node" aria-hidden="true"></span>
+                <div class="stage__head">
+                  <p class="stage__date mono">{fmt(stage.date)}</p>
+                  <h3 class="stage__name">
+                    <span class="mono">STEP {String(i + 1).padStart(2, '0')}</span>
+                    {stage.name}
+                    {isCurrent && <em class="stage__live">進行中</em>}
+                  </h3>
+                  <p class="stage__note">{stage.note}</p>
+                </div>
+                {stage.photos.length > 0 && (
+                  <ul class="stage__photos">
+                    {stage.photos.map((ph) => (
+                      <li>
+                        <button type="button" data-lightbox={ph.url} data-caption={`${stage.name}｜${ph.caption}`}>
+                          <img src={ph.url} alt={ph.caption} loading="lazy" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+    </section>
+  )}
+
+  <!-- 其他案例 -->
+  {others.length > 0 && (
+    <section class="section">
+      <div class="container">
+        <div class="section-head reveal">
+          <p class="eyebrow">MORE PROJECTS</p>
+          <h2 class="h-section">其他案例</h2>
+        </div>
+        <ul class="others">
+          {others.map((pj) =><li class="reveal"><ProjectCard project={pj} index={all.indexOf(pj)} /></li>)}
+        </ul>
+      </div>
+    </section>
+  )}
+
+  <ContactCTA />
+
+  <!-- 看大圖 -->
+  <dialog class="lightbox" data-lightbox-dialog aria-label="檢視照片">
+    <button type="button" class="lightbox__close" data-lightbox-close aria-label="關閉">✕</button>
+    <button type="button" class="lightbox__nav lightbox__nav--prev" data-lightbox-prev aria-label="上一張">‹</button>
+    <figure>
+      <img data-lightbox-img alt="" />
+      <figcaption class="mono" data-lightbox-cap></figcaption>
+    </figure>
+    <button type="button" class="lightbox__nav lightbox__nav--next" data-lightbox-next aria-label="下一張">›</button>
+  </dialog>
+</Base>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>('[data-lightbox-dialog]')!;
+  const img = dialog.querySelector<HTMLImageElement>('[data-lightbox-img]')!;
+  const cap = dialog.querySelector<HTMLElement>('[data-lightbox-cap]')!;
+  const triggers = [...document.querySelectorAll<HTMLElement>('[data-lightbox]')];
+  let current = 0;
+
+  const show = (i: number) => {
+    current = (i + triggers.length) % triggers.length;
+    const t = triggers[current];
+    img.src = t.dataset.lightbox!;
+    img.alt = t.dataset.caption ?? '';
+    cap.textContent = `${String(current + 1).padStart(2, '0')} / ${String(triggers.length).padStart(2, '0')}　${t.dataset.caption ?? ''}`;
+  };
+
+  triggers.forEach((t, i) => t.addEventListener('click', () => { show(i); dialog.showModal(); }));
+  dialog.querySelector('[data-lightbox-close]')!.addEventListener('click', () => dialog.close());
+  dialog.querySelector('[data-lightbox-prev]')!.addEventListener('click', () => show(current - 1));
+  dialog.querySelector('[data-lightbox-next]')!.addEventListener('click', () => show(current + 1));
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+  dialog.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') show(current - 1);
+    if (e.key === 'ArrowRight') show(current + 1);
+  });
+
+  // 手機左右滑動切換
+  let startX = 0;
+  dialog.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, { passive: true });
+  dialog.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) > 50) show(current + (dx < 0 ? 1 : -1));
+  });
+</script>
+
+<style>
+  .intro { padding: calc(var(--header-h) + 32px) 0 32px; }
+  .back { display: block; width: fit-content; font-size: 11px; color: var(--text-3); margin-bottom: 24px; }
+  .back:hover { color: var(--gold); }
+  .title { font-size: clamp(28px, 5vw, 48px); margin-top: 12px; }
+
+  .specs {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    margin-top: 28px; border-top: 1px solid var(--line); border-left: 1px solid var(--line);
+  }
+  .specs div { padding: 12px 14px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .specs dt { font-size: 9px; color: var(--text-3); }
+  .specs dd { font-size: 14px; color: var(--text); font-family: var(--font-sans); letter-spacing: 0; }
+  .specs dd.in_progress { color: var(--amber); }
+  .specs dd.completed { color: var(--gold); }
+  .specs div:last-child { grid-column: 1 / -1; }
+  @media (min-width: 768px) {
+    .specs { grid-template-columns: repeat(5, 1fr); }
+    .specs div:last-child { grid-column: auto; }
+  }
+
+  /* 主圖：手機左右滑；平板以上為一大多小 */
+  .gallery {
+    display: grid; grid-auto-flow: column; grid-auto-columns: 88%; gap: 12px;
+    overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+    margin: 0 calc(var(--gutter) * -1); padding: 0 var(--gutter); scroll-padding-left: var(--gutter);
+  }
+  .gallery::-webkit-scrollbar { display: none; }
+  .gallery__item { scroll-snap-align: start; aspect-ratio: 4 / 3; overflow: hidden; background: var(--surface); display: block; width: 100%; }
+  .gallery__item img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s; }
+  .gallery__item:hover img { transform: scale(1.04); }
+  @media (min-width: 768px) {
+    .gallery {
+      grid-auto-flow: row; grid-template-columns: repeat(var(--thumbs), 1fr); grid-auto-columns: auto;
+      overflow: visible; margin: 0; padding: 0; gap: 16px;
+    }
+    .gallery__item--main { grid-column: 1 / -1; aspect-ratio: 16 / 7; }
+  }
+  @media (min-width: 1200px) {
+    .gallery { grid-template-columns: 2fr 1fr; }
+    .gallery__item--main { grid-column: 1; grid-row: span 2; aspect-ratio: auto; min-height: 480px; }
+    .gallery__item:nth-child(n + 4) { display: none; }
+    .gallery__item:nth-child(2):last-child { grid-row: span 2; aspect-ratio: auto; }
+  }
+
+  .about__grid { display: grid; gap: 40px; }
+  .about__text { color: var(--text-2); font-size: 17px; margin-top: 16px; }
+  .highlights { margin-top: 16px; border-top: 1px solid var(--line); }
+  .highlights li { display: flex; gap: 16px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 16px; }
+  .highlights span { font-size: 12px; color: var(--gold); }
+  @media (min-width: 768px) { .about__grid { grid-template-columns: 1.4fr 1fr; gap: 64px; } }
+
+  /* 時間軸 */
+  .timeline { position: relative; padding-left: 32px; }
+  .timeline::before {
+    content: ''; position: absolute; left: 7px; top: 10px; bottom: 10px; width: 1px;
+    background: linear-gradient(var(--gold), var(--line));
+  }
+  .stage { position: relative; padding-bottom: 48px; }
+  .stage:last-child { padding-bottom: 0; }
+  .stage__node {
+    position: absolute; left: -32px; top: 6px; width: 15px; height: 15px; border-radius: 50%;
+    background: var(--bg); border: 1px solid var(--gold);
+  }
+  .stage__node::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--gold); }
+  .stage.is-current .stage__node { border-color: var(--amber); box-shadow: 0 0 0 4px rgba(215, 148, 45, .2), 0 0 18px rgba(215, 148, 45, .6); }
+  .stage.is-current .stage__node::after { background: var(--amber); animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .3; } }
+  .stage__date { font-size: 12px; color: var(--gold); }
+  .stage__name { font-size: 22px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+  .stage__name .mono { font-size: 11px; color: var(--text-3); font-weight: 400; }
+  .stage__live { font-style: normal; font-size: 12px; font-weight: 500; color: var(--amber); border: 1px solid var(--amber); padding: 0 8px; }
+  .stage__note { color: var(--text-2); margin-top: 6px; font-size: 15px; }
+  .stage__photos {
+    display: grid; grid-auto-flow: column; grid-auto-columns: 60%; gap: 10px; margin-top: 16px;
+    overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+  }
+  .stage__photos::-webkit-scrollbar { display: none; }
+  .stage__photos li { scroll-snap-align: start; }
+  .stage__photos button { display: block; width: 100%; aspect-ratio: 4 / 3; overflow: hidden; border: 1px solid var(--line); }
+  .stage__photos img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s; }
+  .stage__photos button:hover img { transform: scale(1.06); }
+  @media (min-width: 768px) {
+    .stage { display: grid; grid-template-columns: 220px 1fr; gap: 24px; }
+    .stage__photos { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); overflow: visible; margin-top: 0; }
+  }
+  @media (min-width: 1200px) {
+    .timeline { padding-left: 40px; }
+    .stage { grid-template-columns: 280px 1fr; gap: 40px; }
+    .stage__node { left: -40px; }
+    .timeline::before { left: 7px; }
+    .stage__photos { grid-template-columns: repeat(4, 1fr); }
+  }
+
+  .others { display: grid; gap: 20px; }
+  @media (min-width: 768px) { .others { grid-template-columns: repeat(2, 1fr); gap: 24px; } }
+  @media (min-width: 1200px) { .others { grid-template-columns: repeat(3, 1fr); } }
+
+  /* 看大圖 */
+  .lightbox {
+    width: 100vw; height: 100dvh; max-width: none; max-height: none;
+    margin: 0; border: 0; padding: 0;
+    background: rgba(10, 10, 10, .96); color: var(--text);
+    display: none; align-items: center; justify-content: center;
+  }
+  .lightbox[open] { display: flex; }
+  .lightbox::backdrop { background: rgba(0, 0, 0, .8); }
+  .lightbox figure { max-width: min(1200px, 92vw); text-align: center; }
+  .lightbox img { max-width: 100%; max-height: 78dvh; margin: 0 auto; object-fit: contain; }
+  .lightbox figcaption { font-size: 12px; color: var(--text-2); margin-top: 12px; padding: 0 16px; }
+  .lightbox__close { position: absolute; top: 12px; right: 12px; width: 48px; height: 48px; font-size: 20px; color: var(--gold); }
+  .lightbox__nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 48px; height: 72px; font-size: 40px; color: var(--gold); line-height: 1;
+  }
+  .lightbox__nav--prev { left: 4px; }
+  .lightbox__nav--next { right: 4px; }
+  @media (max-width: 767px) { .lightbox__nav { top: auto; bottom: 16px; transform: none; } }
+</style>

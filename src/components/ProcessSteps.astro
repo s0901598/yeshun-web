@@ -1,0 +1,49 @@
+---
+import { processSteps } from '../data/site';
+---
+<ol class="steps">
+  {processSteps.map((step) => (
+    <li class="step reveal">
+      <span class="step__no mono">{step.no}</span>
+      <span class="step__node" aria-hidden="true"></span>
+      <h3 class="step__title">{step.title}</h3>
+      <p class="step__desc">{step.desc}</p>
+    </li>
+  ))}
+</ol>
+
+<style>
+  /* 手機／平板：直排時間軸；電腦：橫排 */
+  .steps { position: relative; display: grid; gap: 0; padding-left: 28px; }
+  .steps::before {
+    content: ''; position: absolute; left: 6px; top: 8px; bottom: 8px; width: 1px;
+    background: linear-gradient(var(--gold), var(--line));
+  }
+  .step { position: relative; padding: 0 0 32px; }
+  .step:last-child { padding-bottom: 0; }
+  .step__node {
+    position: absolute; left: -28px; top: 6px; width: 13px; height: 13px;
+    border: 1px solid var(--gold); background: var(--bg); transform: rotate(45deg);
+  }
+  .step__node::after { content: ''; position: absolute; inset: 3px; background: var(--gold); }
+  .step__no { font-size: 12px; color: var(--gold); }
+  .step__title { font-size: 20px; margin-top: 2px; }
+  .step__desc { color: var(--text-2); font-size: 15px; margin-top: 6px; }
+
+  @media (min-width: 768px) {
+    .steps { grid-template-columns: repeat(2, 1fr); column-gap: 40px; padding-left: 0; }
+    .steps::before { display: none; }
+    .step { padding: 24px 0 24px 28px; border-left: 1px solid var(--line); }
+    .step__node { left: -7px; top: 30px; }
+  }
+
+  @media (min-width: 1200px) {
+    .steps { grid-template-columns: repeat(5, 1fr); column-gap: 24px; }
+    .steps::before {
+      display: block; left: 0; right: 0; top: 46px; bottom: auto; width: auto; height: 1px;
+      background: linear-gradient(90deg, var(--gold), var(--line));
+    }
+    .step { border-left: 0; padding: 0; }
+    .step__node { position: relative; display: block; left: 0; top: 0; margin: 14px 0 18px; }
+  }
+</style>

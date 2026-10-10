@@ -1,0 +1,7 @@
+---
+// 示意內容標籤。site.showTodo 為 false 時不顯示。
+import { site } from '../data/site';
+interface Props { show?: boolean; label?: string }
+const { show = true, label = '待補' } = Astro.props;
+---
+{site.showTodo && show && <span class="todo">{label}</span>}

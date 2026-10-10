@@ -1,0 +1,157 @@
+---
+import Base from '../layouts/Base.astro';
+import Todo from '../components/Todo.astro';
+import { site } from '../data/site';
+import { categoryLabels } from '../data/projects';
+
+const channels = [
+  { en: 'PHONE', label: '電話', ...site.phone },
+  { en: 'LINE', label: 'LINE 官方帳號', ...site.line },
+  { en: 'EMAIL', label: 'Email', ...site.email },
+];
+---
+<Base title="聯絡我們" description="預約業順營造丈量與諮詢，電話、LINE、Email 皆可聯絡。">
+  <section class="page-hero">
+    <div class="page-hero__bg" aria-hidden="true"><img src="/images/detail-tools.webp" alt="" /></div>
+    <div class="blueprint blueprint-overlay" aria-hidden="true"></div>
+    <div class="container">
+      <p class="eyebrow">CONTACT</p>
+      <h1 class="h-display">聯絡我們</h1>
+      <p class="lead">留下需求，我們會在一個工作天內與您聯繫，安排現場丈量與初步建議。<Todo label="回覆時效待確認" /></p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container layout">
+      <!-- 聯絡方式 -->
+      <div class="reveal">
+        <ul class="channels">
+          {channels.map((c) => (
+            <li>
+              <a href={c.href} class="channel corners" target={c.en === 'LINE' ? '_blank' : undefined} rel={c.en === 'LINE' ? 'noopener' : undefined}>
+                <span class="channel__en mono">{c.en}</span>
+                <span class="channel__label">{c.label}</span>
+                <span class="channel__value">{c.value}<Todo show={c.todo} /></span>
+                <span class="channel__arrow mono" aria-hidden="true">→</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+        <dl class="info">
+          <div><dt class="mono">ADDRESS</dt><dd>{site.address.value}<Todo show={site.address.todo} /></dd></div>
+          <div><dt class="mono">HOURS</dt><dd>{site.hours.value}<Todo show={site.hours.todo} /></dd></div>
+        </dl>
+      </div>
+
+      <!-- 需求表單（送出功能之後接資料庫） -->
+      <form class="form reveal" data-form novalidate>
+        <p class="eyebrow">INQUIRY FORM</p>
+        <h2 class="form__title">需求諮詢表單<Todo label="送出功能待接資料庫" /></h2>
+
+        <div class="row">
+          <label class="field">
+            <span>姓名 <em>*</em></span>
+            <input name="name" type="text" autocomplete="name" required />
+          </label>
+          <label class="field">
+            <span>電話 <em>*</em></span>
+            <input name="phone" type="tel" autocomplete="tel" inputmode="tel" required />
+          </label>
+        </div>
+        <div class="row">
+          <label class="field">
+            <span>空間類型</span>
+            <select name="category">
+              {Object.values(categoryLabels).map((c) => <option>{c.zh}</option>)}
+              <option>其他</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>坪數（約）</span>
+            <input name="area" type="number" inputmode="numeric" min="0" />
+          </label>
+        </div>
+        <label class="field">
+          <span>案場地區</span>
+          <input name="location" type="text" placeholder="例：新北市蘆洲區" />
+        </label>
+        <label class="field">
+          <span>需求說明</span>
+          <textarea name="message" rows="5" placeholder="例：30 年老公寓全室翻新，預計明年初入住"></textarea>
+        </label>
+
+        <button type="submit" class="btn btn--primary form__submit">送出需求 <span class="arrow">→</span></button>
+        <p class="form__msg" data-form-msg role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </section>
+
+  <section class="map">
+    <iframe src={site.mapEmbed} title="業順營造地圖位置" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+  </section>
+</Base>
+
+<script>
+  // 表單暫時只做前端檢查；送出功能會在接上 Supabase 後完成
+  const form = document.querySelector<HTMLFormElement>('[data-form]')!;
+  const msg = form.querySelector<HTMLElement>('[data-form-msg]')!;
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = (form.elements.namedItem('name') as HTMLInputElement).value.trim();
+    const phone = (form.elements.namedItem('phone') as HTMLInputElement).value.trim();
+    if (!name || !phone) {
+      msg.textContent = '請填寫姓名與電話。';
+      msg.dataset.state = 'error';
+      return;
+    }
+    msg.textContent = '表單功能建置中，請先用電話或 LINE 與我們聯絡。';
+    msg.dataset.state = 'info';
+  });
+</script>
+
+<style>
+  .layout { display: grid; gap: 48px; }
+  @media (min-width: 1200px) { .layout { grid-template-columns: 1fr 1.2fr; gap: 72px; align-items: start; } }
+
+  .channels { display: grid; gap: 12px; }
+  .channel {
+    display: grid; grid-template-columns: 1fr auto; grid-template-areas: 'en arrow' 'label arrow' 'value arrow';
+    padding: 20px; border: 1px solid var(--line); background: var(--surface);
+    transition: border-color .25s, background-color .25s;
+  }
+  .channel:hover { border-color: var(--line-strong); background: var(--surface-2); }
+  .channel__en { grid-area: en; font-size: 10px; color: var(--gold); }
+  .channel__label { grid-area: label; color: var(--text-2); font-size: 14px; }
+  .channel__value { grid-area: value; font-size: 20px; font-weight: 500; word-break: break-all; }
+  .channel__arrow { grid-area: arrow; align-self: center; color: var(--gold); font-size: 20px; }
+  @media (min-width: 768px) and (max-width: 1199px) { .channels { grid-template-columns: repeat(3, 1fr); } }
+
+  .info { margin-top: 28px; border-top: 1px solid var(--line); }
+  .info div { padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .info dt { font-size: 10px; color: var(--gold); }
+  .info dd { color: var(--text-2); }
+
+  .form { border: 1px solid var(--line); background: var(--bg-2); padding: 24px 20px; display: grid; gap: 18px; }
+  @media (min-width: 768px) { .form { padding: 40px; } }
+  .form__title { font-size: 24px; margin-top: -6px; }
+  .row { display: grid; gap: 18px; }
+  @media (min-width: 768px) { .row { grid-template-columns: 1fr 1fr; } }
+  .field { display: grid; gap: 6px; font-size: 14px; color: var(--text-2); }
+  .field em { color: var(--amber); font-style: normal; }
+  .field input, .field select, .field textarea {
+    width: 100%; min-height: 48px; padding: 10px 14px;
+    background: var(--bg); color: var(--text); border: 1px solid var(--line);
+    font: inherit; font-size: 16px; border-radius: 0;
+    transition: border-color .2s;
+  }
+  .field textarea { resize: vertical; }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--gold); }
+  .form__submit { width: 100%; }
+  .form__msg { font-size: 14px; min-height: 1.5em; }
+  .form__msg[data-state='error'] { color: #e8735a; }
+  .form__msg[data-state='info'] { color: var(--gold); }
+
+  .map { border-top: 1px solid var(--line); }
+  .map iframe { display: block; width: 100%; height: 320px; border: 0; filter: grayscale(1) invert(.9) contrast(.9); }
+  @media (min-width: 768px) { .map iframe { height: 420px; } }
+</style>

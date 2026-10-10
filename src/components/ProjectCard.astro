@@ -1,0 +1,76 @@
+---
+import { categoryLabels, statusLabels, type Project } from '../data/projects';
+interface Props { project: Project; index: number }
+const { project, index } = Astro.props;
+const cat = categoryLabels[project.category];
+---
+<a href={`/projects/${project.slug}`} class="card" data-category={project.category}>
+  <div class="card__media">
+    <img src={project.cover} alt={project.title} loading="lazy" decoding="async" />
+    <span class="card__scan" aria-hidden="true"></span>
+    <span class:list={['card__status', project.status]}>{statusLabels[project.status]}</span>
+  </div>
+  <div class="card__body">
+    <p class="card__meta mono">
+      <span>P-{String(index + 1).padStart(2, '0')}</span>
+      <span>{cat.en}</span>
+    </p>
+    <h3 class="card__title">{project.title}</h3>
+    <dl class="card__specs">
+      <div><dt class="mono">LOC</dt><dd>{project.location}</dd></div>
+      <div><dt class="mono">AREA</dt><dd><span class="mono">{project.areaPing}</span> 坪</dd></div>
+      <div><dt class="mono">DAYS</dt><dd><span class="mono">{project.durationDays}</span> 天</dd></div>
+    </dl>
+  </div>
+</a>
+
+<style>
+  .card {
+    display: flex; flex-direction: column; height: 100%;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    transition: border-color .3s, transform .3s;
+  }
+  .card:hover { border-color: var(--line-strong); transform: translateY(-4px); }
+  .card__media { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: var(--surface-2); }
+  .card__media img { width: 100%; height: 100%; object-fit: cover; transition: transform .8s ease; }
+  .card:hover .card__media img { transform: scale(1.05); }
+
+  /* 滑過時的掃描線 */
+  .card__scan {
+    position: absolute; left: 0; right: 0; top: -2px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    box-shadow: 0 0 12px var(--gold);
+    opacity: 0;
+  }
+  .card:hover .card__scan { animation: scan 1.2s ease-in-out; }
+  @keyframes scan {
+    0% { top: -2px; opacity: 0; }
+    15% { opacity: 1; }
+    85% { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+  }
+
+  .card__status {
+    position: absolute; top: 12px; left: 12px;
+    font-size: 12px; font-weight: 500; padding: 2px 10px;
+    background: rgba(26, 26, 26, .82); border: 1px solid var(--line-strong); color: var(--gold);
+  }
+  .card__status.in_progress { color: var(--amber); border-color: var(--amber); }
+  .card__status.in_progress::before {
+    content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--amber); margin-right: 6px; vertical-align: middle;
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse { 50% { opacity: .25; } }
+
+  .card__body { padding: 18px 18px 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .card__meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--gold); }
+  .card__title { font-size: 18px; font-weight: 700; }
+  .card__specs {
+    display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 8px;
+    margin-top: auto; padding-top: 12px; border-top: 1px dashed var(--line);
+  }
+  .card__specs dt { font-size: 9px; color: var(--text-3); }
+  .card__specs dd { font-size: 13px; color: var(--text-2); }
+</style>

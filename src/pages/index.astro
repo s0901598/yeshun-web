@@ -1,0 +1,170 @@
+---
+import Base from '../layouts/Base.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import ProcessSteps from '../components/ProcessSteps.astro';
+import ContactCTA from '../components/ContactCTA.astro';
+import Todo from '../components/Todo.astro';
+import { site, details } from '../data/site';
+import { getFeaturedProjects } from '../lib/data';
+
+const featured = await getFeaturedProjects(4);
+---
+<Base>
+  <!-- 主視覺 -->
+  <section class="hero">
+    <div class="hero__bg" aria-hidden="true">
+      <img src="/images/hero-site.webp" alt="" fetchpriority="high" />
+    </div>
+    <div class="hero__grid blueprint" aria-hidden="true"></div>
+    <div class="container hero__inner">
+      <p class="eyebrow">INTERIOR DESIGN &amp; CONSTRUCTION</p>
+      <h1 class="h-display hero__title">{site.slogan}</h1>
+      <p class="lead">住宅、商業、辦公與公共空間的室內裝修設計與施工。每一道工序拍照記錄，讓業主看得見施工的每一步。</p>
+      <div class="hero__actions">
+        <a href="/projects" class="btn btn--primary">看案例作品 <span class="arrow">→</span></a>
+        <a href="/contact" class="btn btn--ghost">預約諮詢</a>
+      </div>
+      <p class="hero__coord mono" aria-hidden="true">N 25.0912° / E 121.4666°　—　NEW TAIPEI, TAIWAN</p>
+    </div>
+  </section>
+
+  <!-- 數據列 -->
+  <section class="stats">
+    <div class="container">
+      <ul class="stats__list reveal">
+        {site.stats.items.map((s) => (
+          <li class="stats__item">
+            <p class="stats__value mono"><span data-count={s.value}>0</span><small>{s.suffix}</small></p>
+            <p class="stats__label">{s.label}</p>
+          </li>
+        ))}
+      </ul>
+      <p class="stats__note"><Todo show={site.stats.todo} label="數字待補" /></p>
+    </div>
+  </section>
+
+  <!-- 精選案例 -->
+  <section class="section">
+    <div class="container">
+      <div class="section-head section-head--split reveal">
+        <div>
+          <p class="eyebrow">FEATURED PROJECTS</p>
+          <h2 class="h-section">精選案例<Todo label="示意案例" /></h2>
+          <p class="lead">從老屋翻新到商業空間，每個案子都附上完整的施工過程。</p>
+        </div>
+        <a href="/projects" class="btn btn--ghost">全部案例 <span class="arrow">→</span></a>
+      </div>
+      <ul class="featured">
+        {featured.map((pj, i) => <li class="reveal"><ProjectCard project={pj} index={i} /></li>)}
+      </ul>
+    </div>
+  </section>
+
+  <!-- 注重的細節 -->
+  <section class="section section--alt blueprint--faint">
+    <div class="container">
+      <div class="section-head section-head--split reveal">
+        <div>
+          <p class="eyebrow">OUR DETAILS</p>
+          <h2 class="h-section">看不見的地方，才是重點</h2>
+          <p class="lead">完工後被封起來的防水、管線與結構，決定了房子能住多久。</p>
+        </div>
+        <a href="/details" class="btn btn--ghost">了解更多 <span class="arrow">→</span></a>
+      </div>
+      <ul class="details">
+        {details.slice(0, 4).map((d) => (
+          <li class="detail corners reveal">
+            <p class="detail__code mono">{d.code}</p>
+            <h3 class="detail__title">{d.title}</h3>
+            <p class="detail__text">{d.summary}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <!-- 服務流程 -->
+  <section class="section" id="process">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow">PROCESS</p>
+        <h2 class="h-section">服務流程</h2>
+        <p class="lead">從第一通電話到完工保固，五個步驟，每一步都清楚交代。</p>
+      </div>
+      <ProcessSteps />
+    </div>
+  </section>
+
+  <ContactCTA />
+</Base>
+
+<style>
+  /* 主視覺 */
+  .hero {
+    position: relative; min-height: 88svh; display: flex; align-items: flex-end;
+    padding: calc(var(--header-h) + 48px) 0 56px; overflow: hidden; isolation: isolate;
+  }
+  @media (min-width: 768px) { .hero { min-height: 82vh; padding-bottom: 88px; } }
+  .hero__bg { position: absolute; inset: 0; z-index: -2; }
+  .hero__bg img { width: 100%; height: 100%; object-fit: cover; animation: drift 20s ease-in-out infinite alternate; }
+  .hero__bg::after {
+    content: ''; position: absolute; inset: 0;
+    background:
+      linear-gradient(180deg, rgba(26,26,26,.55) 0%, rgba(26,26,26,.35) 40%, var(--bg) 100%),
+      linear-gradient(90deg, rgba(26,26,26,.75), transparent 70%);
+  }
+  @keyframes drift { to { transform: scale(1.08); } }
+  .hero__grid {
+    position: absolute; inset: 0; z-index: -1; opacity: .5;
+    mask-image: linear-gradient(180deg, transparent, #000 30%, #000 70%, transparent);
+    -webkit-mask-image: linear-gradient(180deg, transparent, #000 30%, #000 70%, transparent);
+  }
+  .hero__title { margin-top: 16px; max-width: 12em; }
+  .hero__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+  .hero__coord { margin-top: 40px; font-size: 10px; color: var(--text-3); }
+  @media (max-width: 767px) {
+    .hero__actions { flex-direction: column; }
+    .hero__actions .btn { width: 100%; }
+  }
+
+  /* 數據列 */
+  .stats { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--bg-2); }
+  .stats__list { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .stats__item { padding: 28px 8px; text-align: center; border-bottom: 1px solid var(--line); }
+  .stats__item:nth-child(odd) { border-right: 1px solid var(--line); }
+  .stats__item:nth-last-child(-n + 2) { border-bottom: 0; }
+  .stats__value { font-size: clamp(32px, 5vw, 48px); color: var(--gold); line-height: 1.1; font-weight: 500; }
+  .stats__value small { font-size: .45em; margin-left: 4px; color: var(--text-2); font-family: var(--font-sans); }
+  .stats__label { font-size: 14px; color: var(--text-2); margin-top: 6px; }
+  .stats__note { text-align: center; padding-bottom: 12px; }
+  .stats__note:empty { display: none; }
+  @media (min-width: 768px) {
+    .stats__list { grid-template-columns: repeat(4, 1fr); }
+    .stats__item { border-bottom: 0; border-right: 1px solid var(--line); padding: 40px 8px; }
+    .stats__item:last-child { border-right: 0; }
+  }
+
+  /* 精選案例：手機左右滑，平板 2 欄，電腦 4 欄 */
+  .featured {
+    display: grid; grid-auto-flow: column; grid-auto-columns: 80%; gap: 16px;
+    overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 8px;
+    margin: 0 calc(var(--gutter) * -1); padding-left: var(--gutter); padding-right: var(--gutter);
+    scroll-padding-left: var(--gutter);
+    scrollbar-width: none;
+  }
+  .featured::-webkit-scrollbar { display: none; }
+  .featured > li { scroll-snap-align: start; }
+  @media (min-width: 768px) {
+    .featured { grid-auto-flow: row; grid-template-columns: repeat(2, 1fr); overflow: visible; margin: 0; padding: 0; gap: 24px; }
+  }
+  @media (min-width: 1200px) { .featured { grid-template-columns: repeat(4, 1fr); } }
+
+  /* 細節 */
+  .details { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .detail { background: rgba(43, 43, 43, .7); border: 1px solid var(--line); padding: 24px; }
+  .detail__code { font-size: 11px; color: var(--gold); }
+  .detail__title { font-size: 20px; margin: 6px 0 8px; }
+  .detail__text { color: var(--text-2); font-size: 15px; }
+  @media (min-width: 768px) { .details { grid-template-columns: repeat(2, 1fr); gap: 24px; } }
+  @media (min-width: 1200px) { .details { grid-template-columns: repeat(4, 1fr); } }
+</style>

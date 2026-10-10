@@ -1,0 +1,265 @@
+---
+import '../styles/global.css';
+import { site, nav } from '../data/site';
+import Todo from '../components/Todo.astro';
+
+interface Props { title?: string; description?: string }
+const { title, description = site.intro } = Astro.props;
+const pageTitle = title ? `${title}｜${site.name}` : `${site.name}｜室內裝修設計與施工`;
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+---
+<!doctype html>
+<html lang="zh-Hant-TW">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta name="theme-color" content="#1a1a1a" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <header class="header" data-header>
+      <div class="container header__inner">
+        <a href="/" class="brand" aria-label={`${site.shortName} 首頁`}>
+          <img src="/images/logo-mark.png" alt="" width="48" height="35" />
+          <span class="brand__text">
+            <span class="brand__zh">{site.shortName}</span>
+            <span class="brand__en mono">{site.englishName}</span>
+          </span>
+        </a>
+
+        <nav class="nav" id="site-nav" aria-label="主選單" data-nav>
+          <ul>
+            {nav.map((item) => (
+              <li>
+                <a href={item.href} class:list={['nav__link', { 'is-active': path === item.href }]}>
+                  <span class="nav__en mono">{item.en}</span>
+                  <span>{item.label}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+          <a href="/contact" class="btn btn--primary nav__cta">預約諮詢</a>
+        </nav>
+
+        <button class="menu-btn" aria-label="開啟選單" aria-expanded="false" aria-controls="site-nav" data-menu-btn>
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="footer blueprint--faint">
+      <div class="container footer__grid">
+        <div class="footer__brand">
+          <img src="/images/logo-mark.png" alt="" width="64" height="46" />
+          <p class="footer__name">{site.name}</p>
+          <p class="footer__license mono">{site.license.value}<Todo show={site.license.todo} /></p>
+        </div>
+        <div>
+          <p class="footer__label mono">CONTACT</p>
+          <ul class="footer__list">
+            <li><a href={site.phone.href}>電話　{site.phone.value}</a><Todo show={site.phone.todo} /></li>
+            <li><a href={site.line.href} target="_blank" rel="noopener">LINE　{site.line.value}</a><Todo show={site.line.todo} /></li>
+            <li><a href={site.email.href}>Email　{site.email.value}</a></li>
+          </ul>
+        </div>
+        <div>
+          <p class="footer__label mono">ADDRESS</p>
+          <ul class="footer__list">
+            <li>{site.address.value}<Todo show={site.address.todo} /></li>
+            <li>{site.hours.value}<Todo show={site.hours.todo} /></li>
+          </ul>
+        </div>
+        <div>
+          <p class="footer__label mono">SITEMAP</p>
+          <ul class="footer__list footer__list--cols">
+            {nav.map((item) => <li><a href={item.href}>{item.label}</a></li>)}
+            <li><a href="/contact">聯絡我們</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <div class="container mono">© {new Date().getFullYear()} {site.englishName}</div>
+      </div>
+    </footer>
+
+    <!-- 手機版固定聯絡列 -->
+    <div class="quickbar" aria-label="快速聯絡">
+      <a href={site.phone.href}><span class="mono">TEL</span>撥打電話</a>
+      <a href={site.line.href} target="_blank" rel="noopener"><span class="mono">LINE</span>加 LINE</a>
+      <a href="/contact" class="quickbar__main"><span class="mono">BOOK</span>預約諮詢</a>
+    </div>
+
+    <script>
+      // 捲動後頁首加底色
+      const header = document.querySelector('[data-header]');
+      const onScroll = () => header?.classList.toggle('is-scrolled', window.scrollY > 24);
+      onScroll();
+      window.addEventListener('scroll', onScroll, { passive: true });
+
+      // 手機／平板選單
+      const btn = document.querySelector<HTMLButtonElement>('[data-menu-btn]');
+      const navEl = document.querySelector('[data-nav]');
+      const setMenu = (open: boolean) => {
+        btn?.setAttribute('aria-expanded', String(open));
+        btn?.setAttribute('aria-label', open ? '關閉選單' : '開啟選單');
+        navEl?.classList.toggle('is-open', open);
+        document.body.classList.toggle('menu-open', open);
+      };
+      btn?.addEventListener('click', () => setMenu(btn.getAttribute('aria-expanded') !== 'true'));
+      navEl?.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setMenu(false)));
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
+      window.matchMedia('(min-width: 1200px)').addEventListener('change', (e) => { if (e.matches) setMenu(false); });
+
+      // 進場動畫與數字跳動
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const countUp = (el: HTMLElement) => {
+        const target = Number(el.dataset.count);
+        if (reduce) { el.textContent = String(target); return; }
+        const start = performance.now();
+        const tick = (now: number) => {
+          const t = Math.min((now - start) / 1400, 1);
+          el.textContent = String(Math.round(target * (1 - Math.pow(1 - t, 3))));
+          if (t < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      };
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const el = entry.target as HTMLElement;
+          el.classList.add('is-in');
+          el.querySelectorAll<HTMLElement>('[data-count]').forEach(countUp);
+          io.unobserve(el);
+        });
+      }, { threshold: 0.15 });
+      document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+    </script>
+  </body>
+</html>
+
+<style>
+  /* 頁首 */
+  .header {
+    position: fixed; inset: 0 0 auto 0; z-index: 100;
+    height: var(--header-h);
+    border-bottom: 1px solid transparent;
+    transition: background-color .3s, border-color .3s, backdrop-filter .3s;
+  }
+  .header.is-scrolled, :global(body.menu-open) .header {
+    background: rgba(26, 26, 26, 0.88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom-color: var(--line);
+  }
+  .header__inner { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+  .brand { display: flex; align-items: center; gap: 12px; position: relative; z-index: 2; }
+  .brand img { width: 40px; height: auto; }
+  .brand__text { display: flex; flex-direction: column; line-height: 1.2; }
+  .brand__zh { font-size: 19px; font-weight: 700; letter-spacing: 0.12em; }
+  .brand__en { font-size: 9px; color: var(--gold); letter-spacing: 0.18em; }
+
+  /* 選單：手機與平板為全螢幕抽屜 */
+  .nav {
+    position: fixed; inset: var(--header-h) 0 0 0;
+    background: var(--bg);
+    padding: 24px var(--gutter) 40px;
+    display: flex; flex-direction: column; gap: 32px;
+    opacity: 0; visibility: hidden; transform: translateY(-8px);
+    transition: opacity .25s, transform .25s, visibility .25s;
+    overflow-y: auto;
+  }
+  .nav.is-open { opacity: 1; visibility: visible; transform: none; }
+  .nav ul { display: flex; flex-direction: column; }
+  .nav__link {
+    display: flex; align-items: baseline; gap: 16px;
+    padding: 18px 0; border-bottom: 1px solid var(--line);
+    font-size: 22px; font-weight: 500;
+  }
+  .nav__en { font-size: 11px; color: var(--gold); width: 80px; }
+  .nav__link.is-active { color: var(--gold); }
+  .nav__cta { width: 100%; }
+
+  .menu-btn { width: 44px; height: 44px; display: grid; place-content: center; gap: 6px; position: relative; z-index: 2; }
+  .menu-btn span { display: block; width: 24px; height: 1.5px; background: var(--text); transition: transform .25s, opacity .25s; }
+  .menu-btn[aria-expanded='true'] span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .menu-btn[aria-expanded='true'] span:nth-child(2) { opacity: 0; }
+  .menu-btn[aria-expanded='true'] span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
+  @media (min-width: 768px) {
+    .nav__link { font-size: 26px; padding: 22px 0; }
+    .nav__cta { width: auto; align-self: flex-start; }
+    .brand img { width: 48px; }
+  }
+
+  /* 電腦版：橫向選單 */
+  @media (min-width: 1200px) {
+    .menu-btn { display: none; }
+    .nav {
+      position: static; opacity: 1; visibility: visible; transform: none;
+      background: none; padding: 0; overflow: visible;
+      flex-direction: row; align-items: center; gap: 36px;
+    }
+    .nav ul { flex-direction: row; gap: 32px; }
+    .nav__link {
+      flex-direction: column; gap: 0; align-items: flex-start;
+      padding: 0; border: 0; font-size: 15px; position: relative;
+    }
+    .nav__en { font-size: 9px; width: auto; }
+    .nav__link::after {
+      content: ''; position: absolute; left: 0; bottom: -6px; height: 1px; width: 0;
+      background: var(--gold); transition: width .3s;
+    }
+    .nav__link:hover::after, .nav__link.is-active::after { width: 100%; }
+    .nav__cta { min-height: 42px; padding: 0 20px; }
+  }
+
+  /* 頁尾 */
+  .footer { border-top: 1px solid var(--line); padding-top: 56px; margin-bottom: 64px; }
+  .footer__grid { display: grid; grid-template-columns: 1fr; gap: 36px; padding-bottom: 48px; }
+  .footer__brand img { width: 56px; margin-bottom: 12px; }
+  .footer__name { font-size: 18px; font-weight: 700; letter-spacing: 0.08em; }
+  .footer__license { font-size: 12px; color: var(--text-3); margin-top: 4px; }
+  .footer__label { font-size: 11px; color: var(--gold); margin-bottom: 12px; }
+  .footer__list { color: var(--text-2); font-size: 15px; display: grid; gap: 8px; }
+  .footer__list a:hover { color: var(--gold); }
+  .footer__list--cols { grid-template-columns: 1fr 1fr; }
+  .footer__bottom { border-top: 1px solid var(--line); padding: 20px 0; font-size: 11px; color: var(--text-3); }
+  @media (min-width: 768px) {
+    .footer__grid { grid-template-columns: 1fr 1fr; gap: 40px; }
+  }
+  @media (min-width: 1200px) {
+    .footer { margin-bottom: 0; }
+    .footer__grid { grid-template-columns: 1.3fr 1fr 1fr 1fr; }
+  }
+
+  /* 手機／平板固定聯絡列 */
+  .quickbar {
+    position: fixed; inset: auto 0 0 0; z-index: 90;
+    display: grid; grid-template-columns: 1fr 1fr 1.3fr;
+    background: rgba(34, 35, 36, 0.96);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    border-top: 1px solid var(--line-strong);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .quickbar a {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 60px; font-size: 14px; font-weight: 500; line-height: 1.3;
+  }
+  .quickbar a + a { border-left: 1px solid var(--line); }
+  .quickbar span { font-size: 9px; color: var(--gold); }
+  .quickbar__main { background: var(--gold); color: #1a1a1a; }
+  .quickbar__main span { color: #1a1a1a; opacity: .7; }
+  :global(body.menu-open) .quickbar { display: none; }
+  @media (min-width: 1200px) { .quickbar { display: none; } }
+</style>
