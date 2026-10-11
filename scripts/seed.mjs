@@ -26,7 +26,7 @@ if (existing) {
   await appendFile('.env', `# 後台登入（第一次登入後建議到後台修改密碼）\nADMIN_EMAIL=${email}\nADMIN_PASSWORD=${password}\n`);
   console.log('已建立管理員：', email, '（密碼寫在 .env 的 ADMIN_PASSWORD）');
 }
-must(await db.from('admins').upsert({ user_id: adminId }));
+must(await db.from('staff').upsert({ user_id: adminId, role: 'admin' }));
 
 // 2. 上傳示意照片（同一張只傳一次）
 const uploaded = new Map();

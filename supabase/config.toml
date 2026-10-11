@@ -417,3 +417,7 @@ enabled = true
 # 後台觸發官網重新部署。登入驗證在函式內用 is_admin() 檢查
 [functions.trigger-deploy]
 verify_jwt = false
+
+# 後台帳號管理。登入驗證在函式內用 is_account_admin() 檢查
+[functions.manage-accounts]
+verify_jwt = false

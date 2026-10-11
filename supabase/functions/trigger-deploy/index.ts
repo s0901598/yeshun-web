@@ -1,4 +1,4 @@
-// 後台按「發布」或儲存後呼叫：確認是管理員，再請 GitHub 重新打包官網。
+// 後台按「發布」或儲存後呼叫：確認是後台人員，再請 GitHub 重新打包官網。
 // 需要在 Supabase 設定秘密變數 GITHUB_DEPLOY_TOKEN（只對 yeshun-web repo 有權限的 GitHub token）。
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
@@ -15,13 +15,13 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json(405, { error: 'method_not_allowed' });
 
-  // 用呼叫者自己的登入憑證查詢，只有 admins 名單裡的人會得到 true
+  // 用呼叫者自己的登入憑證查詢，只有後台人員（管理員或編輯）會得到 true
   const authHeader = req.headers.get('Authorization') ?? '';
   const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
     global: { headers: { Authorization: authHeader } },
   });
-  const { data: isAdmin, error } = await supabase.rpc('is_admin');
-  if (error || !isAdmin) return json(403, { error: 'forbidden' });
+  const { data: isStaff, error } = await supabase.rpc('is_staff');
+  if (error || !isStaff) return json(403, { error: 'forbidden' });
 
   // 去掉貼上時可能多出的空白或換行
   const token = Deno.env.get('GITHUB_DEPLOY_TOKEN')?.trim();

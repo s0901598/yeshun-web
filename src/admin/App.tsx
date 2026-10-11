@@ -6,6 +6,7 @@ import { Field, Toaster, toast, useAction } from './ui';
 import Projects from './Projects';
 import Details from './Details';
 import Process from './Process';
+import Accounts, { roleLabel } from './Accounts';
 
 const tabs = [
   { hash: '#/projects', label: '案例作品' },
@@ -84,7 +85,12 @@ const statusText: Record<SiteStatus, string> = {
 function Shell(props: { email: string }) {
   const hash = useHash();
   const [site, setSite] = useState<SiteStatus>('idle');
+  const [role, setRole] = useState<'admin' | 'editor' | null>(null);
   useEffect(() => onSiteStatus(setSite), []);
+  useEffect(() => {
+    supabase.rpc('my_role').then(({ data }) => setRole(data === 'admin' || data === 'editor' ? data : null));
+  }, [props.email]);
+  const isAdmin = role === 'admin';
 
   const changePassword = async () => {
     const pw = prompt('輸入新密碼（至少 6 個字）');
@@ -95,7 +101,10 @@ function Shell(props: { email: string }) {
     toast(error ? `失敗：${error.message}` : '密碼已更新', error ? 'error' : 'ok');
   };
 
-  const page = hash.startsWith('#/details') ? <Details /> : hash.startsWith('#/process') ? <Process /> : <Projects hash={hash} />;
+  const page = hash.startsWith('#/accounts') && isAdmin ? <Accounts />
+    : hash.startsWith('#/details') ? <Details />
+    : hash.startsWith('#/process') ? <Process />
+    : <Projects hash={hash} />;
 
   return (
     <div class="a-shell">
@@ -109,7 +118,7 @@ function Shell(props: { email: string }) {
           </span>
         </div>
         <nav class="a-tabs">
-          {tabs.map((t) => (
+          {[...tabs, ...(isAdmin ? [{ hash: '#/accounts', label: '帳號管理' }] : [])].map((t) => (
             <a href={t.hash} class={hash.startsWith(t.hash) ? 'is-active' : ''}>{t.label}</a>
           ))}
         </nav>
@@ -121,7 +130,7 @@ function Shell(props: { email: string }) {
         </div>
       </header>
       <main class="a-main">{page}</main>
-      <footer class="a-footer">登入帳號：{toAccount(props.email)}</footer>
+      <footer class="a-footer">登入帳號：{toAccount(props.email)}{role && `（${roleLabel[role]}）`}</footer>
     </div>
   );
 }

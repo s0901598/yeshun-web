@@ -17,7 +17,6 @@ const details = await getDetails();
     <div class="hero__bg" aria-hidden="true">
       <img src={u('/images/hero-site.webp')} alt="" fetchpriority="high" />
     </div>
-    <div class="hero__grid blueprint" aria-hidden="true"></div>
     <div class="container hero__inner">
       <p class="eyebrow">INTERIOR DESIGN &amp; CONSTRUCTION</p>
       <h1 class="h-display hero__title">{site.slogan}</h1>
@@ -63,7 +62,7 @@ const details = await getDetails();
   </section>
 
   <!-- 注重的細節 -->
-  <section class="section section--alt blueprint--faint">
+  <section class="section section--alt">
     <div class="container">
       <div class="section-head section-head--split reveal">
         <div>
@@ -124,11 +123,6 @@ const details = await getDetails();
     background:
       linear-gradient(180deg, rgba(var(--bg-rgb), .78) 0%, rgba(var(--bg-rgb), .62) 45%, var(--bg) 100%),
       linear-gradient(90deg, rgba(var(--bg-rgb), .9), rgba(var(--bg-rgb), .2) 75%);
-  }
-  .hero__grid {
-    position: absolute; inset: 0; z-index: -1; opacity: .5;
-    mask-image: linear-gradient(180deg, transparent, #000 30%, #000 70%, transparent);
-    -webkit-mask-image: linear-gradient(180deg, transparent, #000 30%, #000 70%, transparent);
   }
   .hero__title { margin-top: 16px; max-width: 12em; }
   .hero__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }

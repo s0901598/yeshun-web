@@ -148,3 +148,17 @@ body { font-size: 17px; }
   background: var(--text); color: var(--bg); box-shadow: 0 6px 24px rgba(0, 0, 0, .3);
 }
 .a-toast--error { background: var(--danger); color: #fff; }
+
+/* 帳號管理 */
+.a-secret { border-color: var(--gold); }
+.a-secret dl { display: grid; gap: 6px; margin: 12px 0 16px; }
+.a-secret dl div { display: flex; gap: 12px; align-items: baseline; }
+.a-secret dt { width: 3em; color: var(--text-3); font-size: 15px; }
+.a-secret dd { font-size: 20px; font-weight: 500; }
+.a-secret__pw { font-family: var(--font-mono); letter-spacing: .08em; color: var(--gold-text); user-select: all; }
+.a-account { margin-bottom: 0; }
+.a-account__head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.a-account__head strong { font-size: 18px; display: inline-flex; align-items: center; gap: 4px; }
+.a-account__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 10px; }
+.a-account__role { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; color: var(--text-2); }
+.a-account__role select { min-height: 40px; padding: 4px 8px; font: inherit; font-size: 15px; background: var(--bg); color: var(--text); border: 1px solid var(--line); }
