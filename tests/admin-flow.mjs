@@ -235,6 +235,7 @@ await setup(wp);
 await login(wp);
 await wp.getByRole('button', { name: '＋ 新增案例' }).click();
 await wp.getByRole('heading', { name: '新案例' }).waitFor();
+const webkitCaseId = wp.url().split('/').pop(); // 這一步不會儲存，結束後依 id 刪掉
 await wp.getByLabel('案例名稱').fill('E2E 測試案例');
 await wp.locator('.a-card__head').getByRole('button', { name: '＋ 新增階段' }).click();
 await wp.locator('.a-stage').first().getByRole('button', { name: '＋ 新增階段' }).click();
@@ -244,6 +245,8 @@ check(sb && Math.round(sb.y + sb.height) <= 845 && sb.y > 600, 'webkit: savebar 
 check(await wp.locator('.a-stage').count() === 2, 'webkit: add-stage buttons work');
 await wp.screenshot({ path: join(dir, 'webkit-editor.png') });
 await w.close();
+await svc.from('projects').delete().eq('id', webkitCaseId).eq('title', '新案例');
+check((await svc.from('projects').select('id').eq('id', webkitCaseId)).data.length === 0, 'webkit test case removed');
 await cleanupTestCase();
 
 console.log(results.join('\n'));
