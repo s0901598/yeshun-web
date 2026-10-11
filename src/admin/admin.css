@@ -162,3 +162,67 @@ body { font-size: 17px; }
 .a-account__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 10px; }
 .a-account__role { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; color: var(--text-2); }
 .a-account__role select { min-height: 40px; padding: 4px 8px; font: inherit; font-size: 15px; background: var(--bg); color: var(--text); border: 1px solid var(--line); }
+
+/* ---------- 儲存 → 預覽 → 發布 ---------- */
+/* 固定在畫面最下方的儲存列 */
+.a-editor { padding-bottom: 120px; }
+.a-savebar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  background: var(--bg-2); border-top: 1px solid var(--line-strong);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, .18);
+}
+.a-savebar__msg { font-size: 15px; color: var(--text-2); }
+.a-savebar__msg.is-dirty { color: var(--amber-text); font-weight: 500; }
+.a-savebar__btns { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+@media (max-width: 719px) {
+  .a-savebar__btns { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
+  .a-savebar__btns .a-btn--primary { grid-column: 1 / -1; }
+  .a-savebar__btns .a-btn:only-child { grid-column: 1 / -1; }
+}
+@media (min-width: 920px) { .a-savebar { padding-left: calc((100vw - 888px) / 2); padding-right: calc((100vw - 888px) / 2); } }
+
+/* 未儲存標記 */
+.a-dot { display: inline-block; margin-left: 8px; padding: 0 8px; font-size: 12px; font-weight: 500; font-family: var(--font-sans); letter-spacing: 0; color: #1a1a1a; background: var(--amber); vertical-align: middle; }
+
+/* 發布狀態卡 */
+.a-status { display: grid; gap: 4px; justify-items: start; border-style: dashed; }
+.a-status.is-live { border-style: solid; border-color: var(--gold); }
+.a-status__main { font-weight: 500; }
+.a-status.is-live .a-status__main { color: var(--gold-text); }
+.a-status__sub { font-size: 15px; color: var(--amber-text); }
+.a-badge--warn { border-color: var(--amber); color: var(--amber-text); }
+
+/* 核取方塊 */
+.a-check { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; font-size: 15px; cursor: pointer; }
+.a-check input { width: 20px; height: 20px; accent-color: var(--gold); }
+
+/* 照片狀態 */
+.a-photo__flag--new { background: var(--amber); }
+.a-photo__flag--draft { background: var(--surface-2); color: var(--text); }
+.a-photo__flag--live { background: var(--gold); }
+.a-photo__flag--hidden { background: var(--text-3); color: var(--bg); }
+.a-photo--new { border-color: var(--amber); }
+.a-photo--hidden .a-photo__img img { opacity: .45; }
+.a-photo.is-deleted { opacity: .55; border-style: dashed; text-align: center; }
+.a-photo.is-deleted img { filter: grayscale(1); }
+.a-photo__note { font-size: 13px; color: var(--danger); }
+.a-photo .a-check { min-height: 32px; font-size: 14px; }
+
+/* 階段 */
+.a-stage.is-dirty { border-color: var(--amber); }
+.a-stage--deleted { display: flex; justify-content: space-between; align-items: center; gap: 12px; border-style: dashed; color: var(--text-3); font-size: 15px; }
+.a-stage__foot--split { display: flex; justify-content: space-between; align-items: center; gap: 12px; text-align: left; }
+
+/* 上方狀態列的發布按鈕 */
+.a-site__btn { padding: 0 12px; border: 1px solid currentColor; font-size: 14px; white-space: nowrap; }
+.a-site--pending { color: var(--amber-text); }
+.a-site--publishing { color: var(--gold-text); }
+
+/* 公司資料 */
+.a-subhead { font-size: 16px; margin: 18px 0 10px; padding-top: 14px; border-top: 1px dashed var(--line); color: var(--gold-text); }
+.a-license { width: 100%; max-width: 360px; max-height: 420px; object-fit: contain; background: var(--bg); border: 1px solid var(--line); margin-bottom: 8px; }
+.a-stats { display: grid; gap: 8px; margin-bottom: 12px; }
+.a-stats li { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 6px; align-items: center; }
+.a-stats input { min-height: 44px; padding: 8px 10px; font: inherit; font-size: 15px; background: var(--bg); color: var(--text); border: 1px solid var(--line); width: 100%; min-width: 0; }

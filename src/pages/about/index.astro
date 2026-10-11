@@ -1,0 +1,55 @@
+---
+// 關於我們總覽：兩家公司的入口
+import { u } from '../../lib/url';
+import Base from '../../layouts/Base.astro';
+import ContactCTA from '../../components/ContactCTA.astro';
+import { getCompanies } from '../../lib/data';
+
+const { yeshun, yaosan } = await getCompanies();
+---
+<Base title="關於我們" description={`${yeshun.shortName}負責營造工程，${yaosan.shortName}負責室內裝修。`}>
+  <section class="page-hero">
+    <div class="page-hero__bg" aria-hidden="true"><img src={u('/images/detail-plan.webp')} alt="" /></div>
+    <div class="container">
+      <p class="eyebrow">ABOUT</p>
+      <h1 class="h-display">關於我們</h1>
+      <p class="lead">營造工程由{yeshun.shortName}負責，室內裝修由{yaosan.shortName}承作，從結構到空間一次到位。</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <ul class="companies">
+        {[yeshun, yaosan].map((c) => (
+          <li class="reveal">
+            <a href={u(`/about/${c.id}`)} class="company corners">
+              <span class="company__en mono">{c.englishName}</span>
+              <span class="company__field">{c.field}</span>
+              <span class="company__name">{c.shortName}</span>
+              {c.intro && <span class="company__intro">{c.intro}</span>}
+              <span class="company__more">了解更多 <span class="mono">→</span></span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <ContactCTA />
+</Base>
+
+<style>
+  .companies { display: grid; gap: 20px; }
+  @media (min-width: 768px) { .companies { grid-template-columns: 1fr 1fr; gap: 24px; } }
+  .company {
+    display: flex; flex-direction: column; height: 100%;
+    border: 1px solid var(--line); background: var(--surface); padding: 32px 26px;
+    transition: border-color .25s, transform .25s;
+  }
+  .company:hover { border-color: var(--line-strong); transform: translateY(-4px); }
+  .company__en { font-size: 13px; color: var(--gold-text); }
+  .company__field { color: var(--gold-text); margin-top: 14px; font-size: 17px; }
+  .company__name { font-size: clamp(28px, 4vw, 36px); font-weight: 700; }
+  .company__intro { color: var(--text-2); margin-top: 14px; }
+  .company__more { margin-top: auto; padding-top: 24px; color: var(--gold-text); font-weight: 500; }
+</style>

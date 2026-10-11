@@ -1,6 +1,7 @@
 // 案例的型別與分類標籤。實際資料存在 Supabase（projects、stages、photos 三張表），由 src/lib/data.ts 讀取。
 
-export type Category = 'residential' | 'commercial' | 'office' | 'public';
+export type Category = 'residential' | 'commercial' | 'office' | 'public' | 'commercial_office' | 'factory_office';
+export type CompanyId = 'yeshun' | 'yaosan';
 export type Status = 'in_progress' | 'completed';
 
 export interface Photo {
@@ -25,6 +26,7 @@ export interface Project {
   slug: string;
   title: string;
   category: Category;
+  company: CompanyId;
   location: string;
   areaPing: number;
   durationDays: number;
@@ -43,6 +45,8 @@ export const categoryLabels: Record<Category, { zh: string; en: string }> = {
   commercial: { zh: '商業空間', en: 'COMMERCIAL' },
   office: { zh: '辦公空間', en: 'OFFICE' },
   public: { zh: '公共空間', en: 'PUBLIC' },
+  commercial_office: { zh: '商業辦公空間', en: 'COMMERCIAL OFFICE' },
+  factory_office: { zh: '廠房辦公空間', en: 'FACTORY OFFICE' },
 };
 
 export const statusLabels: Record<Status, string> = {

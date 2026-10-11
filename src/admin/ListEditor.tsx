@@ -1,7 +1,7 @@
 // 「注重的細節」與「服務流程」共用的清單編輯：新增、修改、排序、顯示／隱藏、刪除
 import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
-import { move, must, saveOrder, scheduleSiteUpdate, supabase } from './lib';
+import { move, must, refreshSiteStatus, saveOrder, supabase } from './lib';
 import { MoveButtons, Toggle, useAction } from './ui';
 
 export interface Row { id: string; sort: number; published: boolean; [k: string]: any }
@@ -38,14 +38,14 @@ export default function ListEditor(props: Props) {
   const save = (id: string) => (patch: Record<string, unknown>) => run(async () => {
     const row = must(await supabase.from(props.table).update(patch).eq('id', id).select().single()) as Row;
     setRows(rows.map((r) => (r.id === id ? row : r)));
-    scheduleSiteUpdate();
+    void refreshSiteStatus();
   }, '已儲存');
 
   const reorder = (from: number, to: number) => run(async () => {
     const next = move(rows, from, to);
     setRows(next);
     await saveOrder(props.table, next.map((r) => r.id));
-    scheduleSiteUpdate();
+    void refreshSiteStatus();
   });
 
   const remove = (row: Row) => {
@@ -54,7 +54,7 @@ export default function ListEditor(props: Props) {
       must(await supabase.from(props.table).delete().eq('id', row.id));
       await props.onDeleted?.(row);
       setRows(rows.filter((r) => r.id !== row.id));
-      scheduleSiteUpdate();
+      void refreshSiteStatus();
     }, '已刪除');
   };
 
@@ -64,7 +64,7 @@ export default function ListEditor(props: Props) {
         <h2>{props.title} <small>{rows.length} 項</small></h2>
         <button class="a-btn a-btn--primary" onClick={add} disabled={busy}>＋ 新增{props.itemName}</button>
       </div>
-      <p class="a-hint">官網上的順序跟這裡一樣，用 ↑↓ 調整。關掉「顯示在官網」可以暫時隱藏，不用刪除。</p>
+      <p class="a-hint">官網上的順序跟這裡一樣，用 ↑↓ 調整。關掉「顯示在官網」可以暫時隱藏，不用刪除。儲存後按上方「發布到官網」才會更新官網。</p>
       <ol class="a-items">
         {rows.map((row, i) => (
           <li class={`a-card a-item ${row.published ? '' : 'is-draft'}`} key={row.id}>

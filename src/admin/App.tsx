@@ -1,23 +1,39 @@
-// 後台入口：登入、上方分頁、官網更新狀態
+// 後台入口：登入、上方分頁、發布到官網的狀態
 import type { Session } from '@supabase/supabase-js';
 import { useEffect, useState } from 'preact/hooks';
-import { onSiteStatus, sendSiteUpdate, siteUrl, supabase, type SiteStatus } from './lib';
+import { confirmLeave, onSiteStatus, publishSite, refreshSiteStatus, setUnsaved, siteUrl, supabase, type SiteStatus } from './lib';
 import { Field, Toaster, toast, useAction } from './ui';
 import Projects from './Projects';
 import Details from './Details';
 import Process from './Process';
 import Accounts, { roleLabel } from './Accounts';
+import Companies from './Companies';
 
 const tabs = [
   { hash: '#/projects', label: '案例作品' },
   { hash: '#/details', label: '注重的細節' },
   { hash: '#/process', label: '服務流程' },
+  { hash: '#/company', label: '公司資料' },
 ];
 
+// 切換頁面時，如果還有沒儲存的變更就先問一下；選「取消」會留在原頁
 function useHash() {
   const [hash, setHash] = useState(location.hash || '#/projects');
   useEffect(() => {
-    const on = () => setHash(location.hash || '#/projects');
+    let current = location.hash || '#/projects';
+    let reverting = false;
+    const on = () => {
+      if (reverting) { reverting = false; return; }
+      const next = location.hash || '#/projects';
+      if (!confirmLeave()) {
+        reverting = true;
+        location.hash = current;
+        return;
+      }
+      setUnsaved(0);
+      current = next;
+      setHash(next);
+    };
     addEventListener('hashchange', on);
     return () => removeEventListener('hashchange', on);
   }, []);
@@ -75,18 +91,28 @@ function Login() {
 }
 
 const statusText: Record<SiteStatus, string> = {
-  idle: '官網內容已是最新',
-  pending: '有變更，幾秒後自動更新官網',
-  sent: '已送出更新，官網約 1–2 分鐘後生效',
-  not_configured: '自動更新尚未設定，官網暫時不會更新',
-  error: '通知官網更新失敗',
+  clean: '官網已是最新內容',
+  pending: '後台有已儲存、但還沒發布到官網的變更',
+  publishing: '發布中，官網約 1–2 分鐘後更新',
+  not_configured: '發布功能尚未設定，請聯絡管理員',
+  error: '發布失敗，請再試一次',
 };
 
 function Shell(props: { email: string }) {
   const hash = useHash();
-  const [site, setSite] = useState<SiteStatus>('idle');
+  const [site, setSite] = useState<SiteStatus>('clean');
   const [role, setRole] = useState<'admin' | 'editor' | null>(null);
   useEffect(() => onSiteStatus(setSite), []);
+  useEffect(() => {
+    void refreshSiteStatus();
+    const t = setInterval(() => void refreshSiteStatus(), 30000); // 別人改了內容也會看到
+    return () => clearInterval(t);
+  }, []);
+  const publishAll = async () => {
+    if (!confirm('要把後台目前已儲存的內容發布到官網嗎？\n（還沒發布的案例不會被公開，案例請在案例頁按「發布到官網」）\n官網約 1–2 分鐘後更新。')) return;
+    const ok = await publishSite();
+    toast(ok ? '已送出，官網約 1–2 分鐘後更新' : '發布失敗，請再試一次', ok ? 'ok' : 'error');
+  };
   useEffect(() => {
     supabase.rpc('my_role').then(({ data }) => setRole(data === 'admin' || data === 'editor' ? data : null));
   }, [props.email]);
@@ -104,6 +130,7 @@ function Shell(props: { email: string }) {
   const page = hash.startsWith('#/accounts') && isAdmin ? <Accounts />
     : hash.startsWith('#/details') ? <Details />
     : hash.startsWith('#/process') ? <Process />
+    : hash.startsWith('#/company') ? <Companies />
     : <Projects hash={hash} />;
 
   return (
@@ -114,7 +141,7 @@ function Shell(props: { email: string }) {
           <span class="a-header__user">
             <a href={siteUrl('/')} target="_blank" rel="noopener">看官網 ↗</a>
             <button type="button" onClick={changePassword}>改密碼</button>
-            <button type="button" onClick={() => supabase.auth.signOut()}>登出</button>
+            <button type="button" onClick={() => { if (confirmLeave()) { setUnsaved(0); void supabase.auth.signOut(); } }}>登出</button>
           </span>
         </div>
         <nav class="a-tabs">
@@ -125,7 +152,7 @@ function Shell(props: { email: string }) {
         <div class={`a-site a-site--${site}`} role="status">
           <span>{statusText[site]}</span>
           {(site === 'pending' || site === 'error') && (
-            <button type="button" onClick={() => sendSiteUpdate()}>{site === 'error' ? '重試' : '立即更新'}</button>
+            <button type="button" class="a-site__btn" onClick={publishAll}>發布到官網</button>
           )}
         </div>
       </header>

@@ -2,16 +2,18 @@
 import { u } from '../lib/url';
 import Base from '../layouts/Base.astro';
 import Todo from '../components/Todo.astro';
-import { site } from '../data/site';
 import { categoryLabels } from '../data/projects';
+import { getSettings } from '../lib/data';
 
+const settings = await getSettings();
+// 後台沒填的聯絡方式不顯示
 const channels = [
-  { en: 'PHONE', label: '電話', ...site.phone },
-  { en: 'LINE', label: 'LINE 官方帳號', ...site.line },
-  { en: 'EMAIL', label: 'Email', ...site.email },
-];
+  { en: 'PHONE', label: '電話', value: settings.phone, href: settings.phoneHref },
+  { en: 'LINE', label: 'LINE 官方帳號', value: settings.lineId, href: settings.lineHref },
+  { en: 'EMAIL', label: 'Email', value: settings.email, href: settings.emailHref },
+].filter((c) => c.value);
 ---
-<Base title="聯絡我們" description="預約業順營造丈量與諮詢，電話、LINE、Email 皆可聯絡。">
+<Base title="聯絡我們" description="營造工程、室內裝修諮詢與丈量預約，電話、LINE、Email 皆可聯絡。">
   <section class="page-hero">
     <div class="page-hero__bg" aria-hidden="true"><img src={u('/images/detail-tools.webp')} alt="" /></div>
     <div class="container">
@@ -31,16 +33,18 @@ const channels = [
               <a href={c.href} class="channel corners" target={c.en === 'LINE' ? '_blank' : undefined} rel={c.en === 'LINE' ? 'noopener' : undefined}>
                 <span class="channel__en mono">{c.en}</span>
                 <span class="channel__label">{c.label}</span>
-                <span class="channel__value">{c.value}<Todo show={c.todo} /></span>
+                <span class="channel__value">{c.value}</span>
                 <span class="channel__arrow mono" aria-hidden="true">→</span>
               </a>
             </li>
           ))}
         </ul>
-        <dl class="info">
-          <div><dt class="mono">ADDRESS</dt><dd>{site.address.value}<Todo show={site.address.todo} /></dd></div>
-          <div><dt class="mono">HOURS</dt><dd>{site.hours.value}<Todo show={site.hours.todo} /></dd></div>
-        </dl>
+        {(settings.address || settings.hours) && (
+          <dl class="info">
+            {settings.address && <div><dt class="mono">ADDRESS</dt><dd>{settings.address}</dd></div>}
+            {settings.hours && <div><dt class="mono">HOURS</dt><dd>{settings.hours}</dd></div>}
+          </dl>
+        )}
       </div>
 
       <!-- 需求表單（送出功能之後接資料庫） -->
@@ -58,6 +62,14 @@ const channels = [
             <input name="phone" type="tel" autocomplete="tel" inputmode="tel" required />
           </label>
         </div>
+        <label class="field">
+          <span>需求類型</span>
+          <select name="service">
+            <option>室內裝修（耀三室內裝修）</option>
+            <option>營造工程（業順營造）</option>
+            <option>還不確定</option>
+          </select>
+        </label>
         <div class="row">
           <label class="field">
             <span>空間類型</span>
@@ -86,9 +98,11 @@ const channels = [
     </div>
   </section>
 
-  <section class="map">
-    <iframe src={site.mapEmbed} title="業順營造地圖位置" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-  </section>
+  {settings.mapEmbed && (
+    <section class="map">
+      <iframe src={settings.mapEmbed} title="公司地圖位置" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </section>
+  )}
 </Base>
 
 <script>
@@ -124,7 +138,7 @@ const channels = [
   .channel__label { grid-area: label; color: var(--text-2); font-size: 16px; }
   .channel__value { grid-area: value; font-size: 22px; font-weight: 500; word-break: break-all; }
   .channel__arrow { grid-area: arrow; align-self: center; color: var(--gold-text); font-size: 20px; }
-  @media (min-width: 768px) and (max-width: 1199px) { .channels { grid-template-columns: repeat(3, 1fr); } }
+  @media (min-width: 768px) and (max-width: 1199px) { .channels { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); } }
 
   .info { margin-top: 28px; border-top: 1px solid var(--line); }
   .info div { padding: 14px 0; border-bottom: 1px solid var(--line); }

@@ -1,7 +1,6 @@
 ---
-// 示意內容標籤。site.showTodo 為 false 時不顯示。
-import { site } from '../data/site';
+// 文案待確認標籤：只用在程式裡寫死、還沒跟業主確認的文字。後台管理的內容不使用。
 interface Props { show?: boolean; label?: string }
-const { show = true, label = '待補' } = Astro.props;
+const { show = true, label = '待確認' } = Astro.props;
 ---
-{site.showTodo && show && <span class="todo">{label}</span>}
+{show && <span class="todo">{label}</span>}

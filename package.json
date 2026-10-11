@@ -13,7 +13,8 @@
     "deploy": "gh workflow run deploy.yml -R s0901598/yeshun-web",
     "seed": "node --env-file=.env scripts/seed.mjs",
     "verify": "node tests/verify.mjs",
-    "verify:admin": "node --env-file=.env tests/admin-roles.mjs"
+    "verify:admin": "node --env-file=.env tests/admin-roles.mjs",
+    "verify:flow": "node --env-file=.env tests/admin-flow.mjs"
   },
   "dependencies": {
     "@astrojs/preact": "^6.0.6",

@@ -1,0 +1,30 @@
+---
+// 後台預覽頁：版面跟官網案例頁一樣，內容由瀏覽器登入後讀取（含尚未發布的照片）
+import Base from '../../layouts/Base.astro';
+import '../../styles/project-detail.css';
+import PreviewProject from '../../admin/PreviewProject';
+---
+<Base title="預覽" noindex>
+  <div class="pd">
+    <PreviewProject client:only="preact" />
+  </div>
+</Base>
+
+<style is:global>
+  .pv-bar {
+    position: sticky; top: var(--header-h); z-index: 50;
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 16px;
+    margin-top: var(--header-h); padding: 10px var(--gutter);
+    background: var(--amber); color: #1a1a1a; font-size: 15px;
+  }
+  .pv-bar a { font-weight: 700; text-decoration: underline; }
+  .pd .pv-bar + .intro { padding-top: 32px; }
+  .pv-msg { padding: calc(var(--header-h) + 80px) var(--gutter) 120px; display: grid; gap: 20px; justify-items: start; font-size: 18px; }
+  .pv-warn { color: var(--amber-text); padding: 16px 0; }
+  .pv-flag {
+    position: absolute; top: 8px; left: 8px; z-index: 3;
+    font-size: 12px; font-weight: 700; padding: 1px 8px; background: var(--amber); color: #1a1a1a;
+  }
+  .pd .gallery__item { position: relative; }
+  .pv-photo { position: relative; }
+</style>

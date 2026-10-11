@@ -4,12 +4,13 @@ import Base from '../layouts/Base.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import ProcessSteps from '../components/ProcessSteps.astro';
 import ContactCTA from '../components/ContactCTA.astro';
-import Todo from '../components/Todo.astro';
 import { site } from '../data/site';
-import { getFeaturedProjects, getDetails } from '../lib/data';
+import { getFeaturedProjects, getDetails, getCompanies, getSettings } from '../lib/data';
 
 const featured = await getFeaturedProjects(4);
 const details = await getDetails();
+const companies = await getCompanies();
+const settings = await getSettings();
 ---
 <Base>
   <!-- 主視覺 -->
@@ -29,18 +30,44 @@ const details = await getDetails();
     </div>
   </section>
 
-  <!-- 數據列 -->
+  <!-- 數據列（後台沒有填首頁數據時不顯示） -->
+  {settings.stats.length > 0 && (
   <section class="stats">
     <div class="container">
-      <ul class="stats__list reveal">
-        {site.stats.items.map((s) => (
+      <ul class="stats__list reveal" style={`--n: ${settings.stats.length}`}>
+        {settings.stats.map((s) => (
           <li class="stats__item">
             <p class="stats__value mono"><span data-count={s.value}>0</span><small>{s.suffix}</small></p>
             <p class="stats__label">{s.label}</p>
           </li>
         ))}
       </ul>
-      <p class="stats__note"><Todo show={site.stats.todo} label="數字待補" /></p>
+    </div>
+  </section>
+  )}
+
+  <!-- 服務項目：營造（業順）與裝修（耀三） -->
+  <section class="section">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow">SERVICES</p>
+        <h2 class="h-section">服務項目</h2>
+        <p class="lead">營造工程由業順營造負責，室內裝修由耀三室內裝修承作，從結構到空間一次到位。</p>
+      </div>
+      <ul class="services">
+        {[companies.yeshun, companies.yaosan].map((c) => (
+          <li class="service corners reveal">
+            <p class="service__field mono">{c.id === 'yeshun' ? 'CONSTRUCTION' : 'INTERIOR'}</p>
+            <h3 class="service__title">{c.field}</h3>
+            <p class="service__company">{c.shortName}</p>
+            <p class="service__intro">{c.intro}</p>
+            {c.services.length > 0 && (
+              <ul class="service__list">{c.services.map((x) => <li>{x}</li>)}</ul>
+            )}
+            <a href={u(`/about/${c.id}`)} class="btn btn--ghost service__more">認識{c.shortName} <span class="arrow">→</span></a>
+          </li>
+        ))}
+      </ul>
     </div>
   </section>
 
@@ -50,7 +77,7 @@ const details = await getDetails();
       <div class="section-head section-head--split reveal">
         <div>
           <p class="eyebrow">FEATURED PROJECTS</p>
-          <h2 class="h-section">精選案例<Todo label="示意案例" /></h2>
+          <h2 class="h-section">精選案例</h2>
           <p class="lead">從老屋翻新到商業空間，每個案子都附上完整的施工過程。</p>
         </div>
         <a href={u('/projects')} class="btn btn--ghost">全部案例 <span class="arrow">→</span></a>
@@ -144,7 +171,7 @@ const details = await getDetails();
   .stats__note { text-align: center; padding-bottom: 12px; }
   .stats__note:empty { display: none; }
   @media (min-width: 768px) {
-    .stats__list { grid-template-columns: repeat(4, 1fr); }
+    .stats__list { grid-template-columns: repeat(var(--n), 1fr); }
     .stats__item { border-bottom: 0; border-right: 1px solid var(--line); padding: 40px 8px; }
     .stats__item:last-child { border-right: 0; }
   }
@@ -163,6 +190,19 @@ const details = await getDetails();
     .featured { grid-auto-flow: row; grid-template-columns: repeat(2, 1fr); overflow: visible; margin: 0; padding: 0; gap: 24px; }
   }
   @media (min-width: 1200px) { .featured { grid-template-columns: repeat(4, 1fr); } }
+
+  /* 服務項目 */
+  .services { display: grid; gap: 20px; }
+  .service { border: 1px solid var(--line); background: var(--surface); padding: 28px 24px; display: flex; flex-direction: column; }
+  .service__field { font-size: 13px; color: var(--gold-text); }
+  .service__title { font-size: clamp(26px, 3.4vw, 32px); margin-top: 6px; }
+  .service__company { color: var(--gold-text); font-size: 17px; margin-top: 2px; }
+  .service__intro { color: var(--text-2); margin-top: 14px; }
+  .service__list { margin-top: 16px; border-top: 1px dashed var(--line); padding-top: 12px; display: grid; gap: 8px; }
+  .service__list li { position: relative; padding-left: 22px; font-size: 17px; }
+  .service__list li::before { content: ''; position: absolute; left: 2px; top: .7em; width: 8px; height: 8px; border: 1px solid var(--gold); transform: rotate(45deg); }
+  .service__more { margin-top: 24px; align-self: flex-start; }
+  @media (min-width: 768px) { .services { grid-template-columns: 1fr 1fr; gap: 24px; } .service { padding: 36px 32px; } }
 
   /* 細節 */
   .details { display: grid; grid-template-columns: 1fr; gap: 16px; }

@@ -3,7 +3,6 @@ import { u } from '../../lib/url';
 import Base from '../../layouts/Base.astro';
 import ProjectCard from '../../components/ProjectCard.astro';
 import ContactCTA from '../../components/ContactCTA.astro';
-import Todo from '../../components/Todo.astro';
 import { categoryLabels, type Category } from '../../data/projects';
 import { getProjects } from '../../lib/data';
 
@@ -22,7 +21,7 @@ const filters: { key: Category | 'all'; label: string; count: number }[] = [
     <div class="page-hero__bg" aria-hidden="true"><img src={u('/images/stage-site.webp')} alt="" /></div>
     <div class="container">
       <p class="eyebrow">PROJECTS</p>
-      <h1 class="h-display">案例作品<Todo label="示意案例" /></h1>
+      <h1 class="h-display">案例作品</h1>
       <p class="lead">每個案子都附上從拆除到完工的施工記錄，看得到過程，才放心把空間交給我們。</p>
     </div>
   </section>

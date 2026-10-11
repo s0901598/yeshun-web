@@ -1,4 +1,4 @@
-// 後台按「發布」或儲存後呼叫：確認是後台人員，再請 GitHub 重新打包官網。
+// 後台按「發布到官網」時呼叫：確認是後台人員，再請 GitHub 重新打包官網（約 1–2 分鐘）。
 // 需要在 Supabase 設定秘密變數 GITHUB_DEPLOY_TOKEN（只對 yeshun-web repo 有權限的 GitHub token）。
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
@@ -37,5 +37,11 @@ Deno.serve(async (req) => {
     body: JSON.stringify({ event_type: 'content-updated' }),
   });
   if (!res.ok) return json(502, { error: 'github_failed', status: res.status });
+
+  // 記錄發布時間：之後後台用來判斷「有沒有尚未發布的變更」
+  const service = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
+    auth: { persistSession: false },
+  });
+  await service.from('site_meta').update({ deployed_at: new Date().toISOString() }).eq('id', 1);
   return json(200, { ok: true });
 });

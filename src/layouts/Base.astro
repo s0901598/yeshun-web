@@ -1,13 +1,17 @@
 ---
 import { u } from '../lib/url';
 import '../styles/global.css';
-import { site, nav } from '../data/site';
-import Todo from '../components/Todo.astro';
+import { nav } from '../data/site';
+import { getCompanies, getSettings } from '../lib/data';
 
-interface Props { title?: string; description?: string }
-const { title, description = site.intro } = Astro.props;
-const pageTitle = title ? `${title}｜${site.name}` : `${site.name}｜室內裝修設計與施工`;
+interface Props { title?: string; description?: string; noindex?: boolean }
+const companies = await getCompanies();
+const settings = await getSettings();
+const { yeshun, yaosan } = companies;
+const { title, description = yeshun.intro, noindex = false } = Astro.props;
+const pageTitle = title ? `${title}｜${yeshun.name}` : `${yeshun.name}｜營造工程・室內裝修`;
 const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const isActive = (href: string) => path === u(href) || path.startsWith(u(href) + '/');
 ---
 <!doctype html>
 <html lang="zh-Hant-TW">
@@ -16,6 +20,7 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta name="theme-color" content="#1a1a1a" data-theme-color />
@@ -37,19 +42,33 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
   <body>
     <header class="header" data-header>
       <div class="container header__inner">
-        <a href={u('/')} class="brand" aria-label={`${site.shortName} 首頁`}>
+        <a href={u('/')} class="brand" aria-label={`${yeshun.shortName}、${yaosan.shortName} 首頁`}>
           <img src={u('/images/logo-mark.png')} alt="" width="48" height="35" />
           <span class="brand__text">
-            <span class="brand__zh">{site.shortName}</span>
-            <span class="brand__en mono">{site.englishName}</span>
+            <span class="brand__zh">{yeshun.shortName}</span>
+            <span class="brand__sub">{yaosan.shortName}</span>
           </span>
         </a>
 
         <nav class="nav" id="site-nav" aria-label="主選單" data-nav>
           <ul>
-            {nav.map((item) => (
+            {nav.map((item) => item.children ? (
+              <li class="nav__group" data-sub>
+                <button type="button" class:list={['nav__link', 'nav__toggle', { 'is-active': isActive(item.href) }]}
+                  aria-expanded="false" aria-controls={`sub-${item.en}`} data-sub-toggle>
+                  <span class="nav__en mono">{item.en}</span>
+                  <span>{item.label}</span>
+                  <span class="nav__chev" aria-hidden="true"></span>
+                </button>
+                <ul class="nav__sub" id={`sub-${item.en}`}>
+                  {item.children.map((c) => (
+                    <li><a href={u(c.href)} class:list={['nav__sublink', { 'is-active': isActive(c.href) }]}>{c.label}</a></li>
+                  ))}
+                </ul>
+              </li>
+            ) : (
               <li>
-                <a href={u(item.href)} class:list={['nav__link', { 'is-active': path === u(item.href) }]}>
+                <a href={u(item.href)} class:list={['nav__link', { 'is-active': isActive(item.href) }]}>
                   <span class="nav__en mono">{item.en}</span>
                   <span>{item.label}</span>
                 </a>
@@ -78,41 +97,50 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
       <div class="container footer__grid">
         <div class="footer__brand">
           <img src={u('/images/logo-mark.png')} alt="" width="64" height="46" />
-          <p class="footer__name">{site.name}</p>
-          <p class="footer__license mono">{site.license.value}<Todo show={site.license.todo} /></p>
+          {[yeshun, yaosan].map((c) => (
+            <div class="footer__company">
+              <p class="footer__name">{c.name}</p>
+              <p class="footer__field">{c.field}</p>
+              {c.licenseNo && <p class="footer__license mono">{c.licenseNo}</p>}
+            </div>
+          ))}
         </div>
-        <div>
-          <p class="footer__label mono">CONTACT</p>
-          <ul class="footer__list">
-            <li><a href={site.phone.href}>電話　{site.phone.value}</a><Todo show={site.phone.todo} /></li>
-            <li><a href={site.line.href} target="_blank" rel="noopener">LINE　{site.line.value}</a><Todo show={site.line.todo} /></li>
-            <li><a href={site.email.href}>Email　{site.email.value}</a></li>
-          </ul>
-        </div>
-        <div>
-          <p class="footer__label mono">ADDRESS</p>
-          <ul class="footer__list">
-            <li>{site.address.value}<Todo show={site.address.todo} /></li>
-            <li>{site.hours.value}<Todo show={site.hours.todo} /></li>
-          </ul>
-        </div>
+        {(settings.phone || settings.lineId || settings.email) && (
+          <div>
+            <p class="footer__label mono">CONTACT</p>
+            <ul class="footer__list">
+              {settings.phone && <li><a href={settings.phoneHref}>電話　{settings.phone}</a></li>}
+              {settings.lineId && <li><a href={settings.lineHref} target="_blank" rel="noopener">LINE　{settings.lineId}</a></li>}
+              {settings.email && <li><a href={settings.emailHref}>Email　{settings.email}</a></li>}
+            </ul>
+          </div>
+        )}
+        {(settings.address || settings.hours) && (
+          <div>
+            <p class="footer__label mono">ADDRESS</p>
+            <ul class="footer__list">
+              {settings.address && <li>{settings.address}</li>}
+              {settings.hours && <li>{settings.hours}</li>}
+            </ul>
+          </div>
+        )}
         <div>
           <p class="footer__label mono">SITEMAP</p>
           <ul class="footer__list footer__list--cols">
-            {nav.map((item) => <li><a href={u(item.href)}>{item.label}</a></li>)}
+            {nav.flatMap((item) => item.children ?? [item]).map((item) => <li><a href={u(item.href)}>{item.label}</a></li>)}
             <li><a href={u('/contact')}>聯絡我們</a></li>
           </ul>
         </div>
       </div>
       <div class="footer__bottom">
-        <div class="container mono">© {new Date().getFullYear()} {site.englishName}</div>
+        <div class="container mono">© {new Date().getFullYear()} {yeshun.englishName} × {yaosan.englishName}</div>
       </div>
     </footer>
 
     <!-- 手機版固定聯絡列 -->
-    <div class="quickbar" aria-label="快速聯絡">
-      <a href={site.phone.href}><span class="mono">TEL</span>撥打電話</a>
-      <a href={site.line.href} target="_blank" rel="noopener"><span class="mono">LINE</span>加 LINE</a>
+    <div class="quickbar" aria-label="快速聯絡" style={`grid-template-columns: ${'1fr '.repeat([settings.phone, settings.lineId].filter(Boolean).length)}1.3fr`}>
+      {settings.phone && <a href={settings.phoneHref}><span class="mono">TEL</span>撥打電話</a>}
+      {settings.lineId && <a href={settings.lineHref} target="_blank" rel="noopener"><span class="mono">LINE</span>加 LINE</a>}
       <a href={u('/contact')} class="quickbar__main"><span class="mono">BOOK</span>預約諮詢</a>
     </div>
 
@@ -154,6 +182,28 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
       navEl?.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setMenu(false)));
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
       window.matchMedia('(min-width: 1200px)').addEventListener('change', (e) => { if (e.matches) setMenu(false); });
+
+      // 「關於我們」子選單：手機在選單裡展開；電腦是下拉選單，點外面會關閉
+      const groups = document.querySelectorAll<HTMLElement>('[data-sub]');
+      const closeGroups = (except?: Element) => groups.forEach((g) => {
+        if (g === except) return;
+        g.classList.remove('is-open');
+        g.querySelector('[data-sub-toggle]')?.setAttribute('aria-expanded', 'false');
+      });
+      groups.forEach((g) => {
+        const toggle = g.querySelector<HTMLButtonElement>('[data-sub-toggle]')!;
+        toggle.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const open = !g.classList.contains('is-open');
+          closeGroups(g);
+          g.classList.toggle('is-open', open);
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+      });
+      document.addEventListener('click', (e) => {
+        if (window.matchMedia('(min-width: 1200px)').matches && !(e.target as Element).closest('[data-sub]')) closeGroups();
+      });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeGroups(); });
 
       // 進場動畫與數字跳動
       const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -208,7 +258,7 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
   .brand img { width: 40px; height: auto; }
   .brand__text { display: flex; flex-direction: column; line-height: 1.2; }
   .brand__zh { font-size: 21px; font-weight: 700; letter-spacing: 0.12em; }
-  .brand__en { font-size: 11px; color: var(--gold-text); letter-spacing: 0.18em; }
+  .brand__sub { font-size: 12px; color: var(--gold-text); letter-spacing: 0.16em; margin-top: 2px; }
 
   /* 選單：手機與平板為全螢幕抽屜 */
   .nav {
@@ -230,6 +280,19 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
   }
   .nav__en { font-size: 13px; color: var(--gold-text); width: 96px; }
   .nav__link.is-active { color: var(--gold-text); }
+  .nav__toggle { width: 100%; text-align: left; cursor: pointer; }
+  .nav__chev {
+    margin-left: auto; width: 10px; height: 10px; flex: none; align-self: center;
+    border-right: 1.5px solid var(--gold); border-bottom: 1.5px solid var(--gold);
+    transform: rotate(45deg) translateY(-3px); transition: transform .25s;
+  }
+  .nav__group.is-open .nav__chev { transform: rotate(-135deg) translateY(-3px); }
+  /* 手機、平板：子選單在抽屜裡展開 */
+  .nav__sub { display: none; padding: 4px 0 12px 112px; border-bottom: 1px solid var(--line); }
+  .nav__group.is-open .nav__sub { display: block; }
+  .nav__group.is-open .nav__toggle { border-bottom-color: transparent; }
+  .nav__sublink { display: block; padding: 12px 0; font-size: 20px; color: var(--text-2); }
+  .nav__sublink.is-active, .nav__sublink:hover { color: var(--gold-text); }
   .nav__cta { width: 100%; }
 
   /* 主題切換按鈕 */
@@ -277,6 +340,18 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
       background: var(--gold); transition: width .3s;
     }
     .nav__link:hover::after, .nav__link.is-active::after { width: 100%; }
+    /* 電腦版：下拉選單 */
+    .nav__group { position: relative; }
+    .nav__toggle { width: auto; flex-direction: column; padding-right: 18px; }
+    .nav__chev { position: absolute; right: 0; bottom: 8px; width: 7px; height: 7px; margin: 0; }
+    .nav__sub {
+      position: absolute; top: calc(100% + 18px); left: -18px; min-width: 200px;
+      padding: 8px 0; border: 1px solid var(--line-strong); background: var(--bg);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, .25);
+    }
+    .nav__group:hover .nav__sub, .nav__group:focus-within .nav__sub { display: block; }
+    .nav__group::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 20px; } /* 滑鼠移到下拉選單途中不會關掉 */
+    .nav__sublink { font-size: 16px; padding: 10px 18px; }
     .nav__cta { min-height: 46px; padding: 0 22px; }
   }
 
@@ -284,6 +359,8 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
   .footer { border-top: 1px solid var(--line); padding-top: 56px; margin-bottom: 64px; }
   .footer__grid { display: grid; grid-template-columns: 1fr; gap: 36px; padding-bottom: 48px; }
   .footer__brand img { width: 56px; margin-bottom: 12px; }
+  .footer__company + .footer__company { margin-top: 14px; }
+  .footer__field { font-size: 14px; color: var(--gold-text); }
   .footer__name { font-size: 20px; font-weight: 700; letter-spacing: 0.08em; }
   .footer__license { font-size: 14px; color: var(--text-3); margin-top: 4px; }
   .footer__label { font-size: 13px; color: var(--gold-text); margin-bottom: 12px; }
@@ -302,7 +379,7 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
   /* 手機／平板固定聯絡列 */
   .quickbar {
     position: fixed; inset: auto 0 0 0; z-index: 90;
-    display: grid; grid-template-columns: 1fr 1fr 1.3fr;
+    display: grid; /* 欄數依有填的聯絡方式決定（寫在元素的 style 上） */
     background: rgba(var(--bg2-rgb), 0.96);
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     border-top: 1px solid var(--line-strong);

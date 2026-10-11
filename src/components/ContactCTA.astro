@@ -1,6 +1,8 @@
 ---
 import { u } from '../lib/url';
-import { site } from '../data/site';
+import { getSettings } from '../lib/data';
+
+const settings = await getSettings();
 ---
 <section class="cta section">
   <div class="container cta__inner reveal">
@@ -9,7 +11,7 @@ import { site } from '../data/site';
     <p class="lead">告訴我們空間現況、預算與時程，我們會安排丈量與初步建議，諮詢不收費。</p>
     <div class="cta__actions">
       <a href={u('/contact')} class="btn btn--primary">預約諮詢 <span class="arrow">→</span></a>
-      <a href={site.phone.href} class="btn btn--ghost">撥打 {site.phone.value}</a>
+      {settings.phone && <a href={settings.phoneHref} class="btn btn--ghost">撥打 {settings.phone}</a>}
     </div>
   </div>
 </section>

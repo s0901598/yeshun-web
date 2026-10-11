@@ -43,7 +43,7 @@ async function upload(localPath) {
 must(await db.from('projects').delete().neq('id', '00000000-0000-0000-0000-000000000000'));
 for (const pj of projects) {
   const row = must(await db.from('projects').insert({
-    slug: pj.slug, title: pj.title, category: pj.category, location: pj.location,
+    slug: pj.slug, title: pj.title, category: pj.category, company: pj.company, location: pj.location,
     area_ping: pj.areaPing, duration_days: pj.durationDays, status: pj.status,
     summary: pj.summary, highlights: pj.highlights, cover_path: await upload(pj.cover),
     featured: pj.featured, published: pj.published, started_at: pj.startedAt,

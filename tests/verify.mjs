@@ -1,7 +1,7 @@
 // 完整驗證：Chromium + WebKit × 手機/平板/電腦 × 深/淺色 × 所有頁面，含互動狀態
 import { chromium, webkit } from 'playwright';
 const B = process.argv[2] ?? 'http://localhost:4321/yeshun-web';
-const pages = ['/', '/about/', '/projects/', '/projects/luzhou-house/', '/details/', '/process/', '/contact/'];
+const pages = ['/', '/about/', '/about/yeshun/', '/about/yaosan/', '/projects/', '/projects/luzhou-house/', '/details/', '/process/', '/contact/'];
 const sizes = [[390, 844, 'phone'], [820, 1180, 'tablet'], [1440, 900, 'desktop']];
 const problems = []; let checks = 0;
 const bad = (m) => problems.push(m);
@@ -40,6 +40,22 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
           if (!m.full || !m.lastVisible) bad(`${tag}: menu not fully shown (scroll ${y}) ${JSON.stringify(m)}`);
           await p.click('[data-menu-btn]'); await p.waitForTimeout(300);
         }
+      }
+      // 互動：「關於我們」子選單——手機在選單裡展開、電腦是下拉選單，兩個子項目都要看得到、點得到
+      if (path === '/') {
+        if (dev !== 'desktop') {
+          await p.click('[data-menu-btn]'); await p.waitForTimeout(350);
+          await p.click('[data-sub-toggle]'); await p.waitForTimeout(250);
+        } else {
+          await p.hover('[data-sub-toggle]'); await p.waitForTimeout(250);
+        }
+        const subs = await p.evaluate(() => [...document.querySelectorAll('.nav__sublink')].map((a) => {
+          const r = a.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.bottom <= innerHeight && r.top >= 0;
+        }));
+        checks++; if (subs.length !== 2 || !subs.every(Boolean)) bad(`${tag}: 關於我們 submenu not fully visible ${JSON.stringify(subs)}`);
+        await p.locator('.nav__sublink', { hasText: '耀三' }).click(); await p.waitForLoadState('networkidle');
+        checks++; if (!p.url().includes('/about/yaosan')) bad(`${tag}: submenu link did not open 耀三 page (${p.url()})`);
+        await p.goto(B + path, { waitUntil: 'networkidle' });
       }
       // 互動：案例頁看大圖
       if (path.startsWith('/projects/luzhou')) {

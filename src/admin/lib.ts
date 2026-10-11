@@ -62,12 +62,12 @@ export async function removeFileIfUnused(path: string | null | undefined) {
   must(await supabase.storage.from(BUCKET).remove([path]));
 }
 
-// ---------- 通知官網更新 ----------
-// 內容有變動時排程一次「重新打包官網」；連續修改只會在停手幾秒後送出一次。
-export type SiteStatus = 'idle' | 'pending' | 'sent' | 'not_configured' | 'error';
-let status: SiteStatus = 'idle';
+// ---------- 發布到官網 ----------
+// 儲存只會存進後台，官網不會變；按「發布到官網」才重新打包官網（約 1–2 分鐘）。
+// 狀態依資料庫記錄的「最後修改時間」與「最後發布時間」判斷，換電腦、換人登入都一樣準。
+export type SiteStatus = 'clean' | 'pending' | 'publishing' | 'not_configured' | 'error';
+let status: SiteStatus = 'clean';
 const listeners = new Set<(s: SiteStatus) => void>();
-let timer: ReturnType<typeof setTimeout> | undefined;
 
 function setStatus(s: SiteStatus) {
   status = s;
@@ -79,23 +79,36 @@ export function onSiteStatus(fn: (s: SiteStatus) => void) {
   return () => listeners.delete(fn);
 }
 
-export function scheduleSiteUpdate() {
-  setStatus('pending');
-  clearTimeout(timer);
-  timer = setTimeout(sendSiteUpdate, 5000);
+/** 重新查一次有沒有尚未發布的變更（儲存後呼叫） */
+export async function refreshSiteStatus() {
+  if (status === 'publishing') return;
+  const { data } = await supabase.rpc('publish_status');
+  const row = Array.isArray(data) ? data[0] : data;
+  if (row) setStatus(row.pending ? 'pending' : 'clean');
 }
 
-export async function sendSiteUpdate() {
-  clearTimeout(timer);
+/** 請 GitHub 重新打包官網 */
+export async function publishSite(): Promise<boolean> {
   const { data, error } = await supabase.functions.invoke('trigger-deploy', { method: 'POST' });
-  if (!error && data?.ok) return setStatus('sent');
+  if (!error && data?.ok) {
+    setStatus('publishing');
+    setTimeout(() => { setStatus('clean'); void refreshSiteStatus(); }, 120000); // 約 2 分鐘後官網已更新
+    return true;
+  }
   const body = error && 'context' in error ? await (error as any).context?.json?.().catch(() => null) : null;
   setStatus(body?.error === 'not_configured' ? 'not_configured' : 'error');
+  return false;
 }
 
-// 離開頁面前還有沒送出的更新，就立刻送出
+// ---------- 未儲存提醒 ----------
+// 編輯頁回報目前有幾項未儲存；切換分頁、關閉視窗時會提醒
+let unsaved = 0;
+export function setUnsaved(n: number) { unsaved = n; }
+export function confirmLeave(): boolean {
+  return unsaved === 0 || confirm(`有 ${unsaved} 項變更還沒儲存，離開後會遺失。確定要離開嗎？`);
+}
 if (typeof window !== 'undefined') {
-  window.addEventListener('pagehide', () => { if (status === 'pending') void sendSiteUpdate(); });
+  window.addEventListener('beforeunload', (e) => { if (unsaved > 0) { e.preventDefault(); e.returnValue = ''; } });
 }
 
 // ---------- 其他 ----------
@@ -107,6 +120,13 @@ export const categoryOptions = [
   { value: 'commercial', label: '商業空間' },
   { value: 'office', label: '辦公空間' },
   { value: 'public', label: '公共空間' },
+  { value: 'commercial_office', label: '商業辦公空間' },
+  { value: 'factory_office', label: '廠房辦公空間' },
+];
+
+export const companyOptions = [
+  { value: 'yeshun', label: '業順營造' },
+  { value: 'yaosan', label: '耀三室內裝修' },
 ];
 
 export const lines = (text: string) => text.split('\n').map((s) => s.trim()).filter(Boolean);

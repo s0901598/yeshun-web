@@ -1,7 +1,7 @@
 // 官網讀取資料的唯一入口：打包網站時從 Supabase 讀取內容。
 // 使用公開金鑰（publishable key），資料庫權限規則保證只讀得到「已發布」的內容。
 import { createClient } from '@supabase/supabase-js';
-import type { Category, Project, Status } from '../data/projects';
+import type { Category, CompanyId, Project, Status } from '../data/projects';
 
 const url = import.meta.env.PUBLIC_SUPABASE_URL;
 const key = import.meta.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -37,6 +37,7 @@ export function getProjects(): Promise<Project[]> {
       slug: r.slug,
       title: r.title,
       category: r.category as Category,
+      company: r.company as CompanyId,
       location: r.location,
       areaPing: r.area_ping === null ? 0 : Number(r.area_ping),
       durationDays: r.duration_days ?? 0,
@@ -97,4 +98,49 @@ export async function getProcessSteps(): Promise<ProcessStep[]> {
     items: r.items ?? [],
     duration: r.duration,
   }));
+}
+
+// ---------- 公司資料（業順營造、耀三室內裝修） ----------
+export interface Company {
+  id: CompanyId; name: string; shortName: string; englishName: string; field: string;
+  intro: string; services: string[]; licenseNo: string; licenseImage: string; sort: number;
+}
+
+let companiesCache: Promise<Record<CompanyId, Company>> | undefined;
+export function getCompanies(): Promise<Record<CompanyId, Company>> {
+  companiesCache ??= (async () => {
+    const rows = must(await db.from('companies').select('*').order('sort'));
+    return Object.fromEntries(rows.map((r: any) => [r.id, {
+      id: r.id, name: r.name, shortName: r.short_name, englishName: r.english_name, field: r.field,
+      intro: r.intro, services: r.services ?? [], licenseNo: r.license_no.trim(), sort: r.sort,
+      // 登記證照片：後台勾選「顯示在官網」才放出來
+      licenseImage: r.show_license_image ? photoUrl(r.license_image_path) : '',
+    } satisfies Company])) as Record<CompanyId, Company>;
+  })();
+  return companiesCache;
+}
+
+// ---------- 共用聯絡資料：空白的欄位不顯示 ----------
+export interface Settings {
+  phone: string; phoneHref: string; lineId: string; lineHref: string; email: string; emailHref: string;
+  address: string; hours: string; mapEmbed: string; stats: { label: string; value: number; suffix: string }[];
+}
+
+let settingsCache: Promise<Settings> | undefined;
+export function getSettings(): Promise<Settings> {
+  settingsCache ??= (async () => {
+    const r: any = must(await db.from('site_settings').select('*').eq('id', 1).single());
+    const phone = r.phone.trim(), lineId = r.line_id.trim(), email = r.email.trim(), address = r.address.trim();
+    return {
+      phone, phoneHref: phone ? `tel:${phone.replace(/[^0-9+]/g, '')}` : '',
+      lineId, lineHref: r.line_url.trim() || (lineId ? `https://line.me/R/ti/p/${encodeURIComponent(lineId)}` : ''),
+      email, emailHref: email ? `mailto:${email}` : '',
+      address, hours: r.hours.trim(),
+      // 地圖直接用地址產生，不需要另外貼地圖程式碼
+      mapEmbed: address ? `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed&hl=zh-TW` : '',
+      stats: (r.stats ?? []).filter((x: any) => x?.label && Number.isFinite(Number(x.value)))
+        .map((x: any) => ({ label: String(x.label), value: Number(x.value), suffix: String(x.suffix ?? '') })),
+    };
+  })();
+  return settingsCache;
 }
