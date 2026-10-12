@@ -15,6 +15,8 @@ interface Props {
   /** 每一筆的編輯表單，save 收到要更新的欄位 */
   renderForm: (row: Row, save: (patch: Record<string, unknown>) => Promise<boolean>, busy: boolean) => ComponentChildren;
   onDeleted?: (row: Row) => Promise<void>;
+  /** 顯示在最上方的提醒，例如「這一頁目前在官網上隱藏」 */
+  notice?: string;
 }
 
 export default function ListEditor(props: Props) {
@@ -64,6 +66,7 @@ export default function ListEditor(props: Props) {
         <h2>{props.title} <small>{rows.length} 項</small></h2>
         <button class="a-btn a-btn--primary" onClick={add} disabled={busy}>＋ 新增{props.itemName}</button>
       </div>
+      {props.notice && <p class="a-notice">{props.notice}</p>}
       <p class="a-hint">官網上的順序跟這裡一樣，用 ↑↓ 調整。關掉「顯示在官網」可以暫時隱藏，不用刪除。儲存後按上方「發布到官網」才會更新官網。</p>
       <ol class="a-items">
         {rows.map((row, i) => (

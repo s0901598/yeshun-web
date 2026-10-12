@@ -154,7 +154,7 @@ h1, h2, h3 { font-weight: 700; line-height: 1.3; letter-spacing: 0.02em; }
 .page-hero__bg { position: absolute; inset: 0; z-index: -1; }
 .page-hero__bg img { width: 100%; height: 100%; object-fit: cover; opacity: .28; }
 /* 淺色模式：標題背景照片轉黑白，避免夕陽照片讓白底看起來偏咖啡色 */
-:root[data-theme='light'] .page-hero__bg img, :root[data-theme='light'] .hero__bg img { filter: grayscale(1); }
+:root[data-theme='light'] .page-hero__bg img { filter: grayscale(1); }
 .page-hero__bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(var(--bg-rgb), .6), var(--bg)); }
 
 /* 手機選單打開時鎖住背景捲動 */

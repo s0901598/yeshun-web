@@ -2,6 +2,7 @@
 import { useState } from 'preact/hooks';
 import { photoUrl, removeFileIfUnused, uploadImage } from './lib';
 import ListEditor, { type Row } from './ListEditor';
+import { detailsEnabled } from '../data/site';
 import { Field, PhotoPicker } from './ui';
 
 export default function Details() {
@@ -10,6 +11,7 @@ export default function Details() {
       table="details"
       title="注重的細節"
       itemName="細節"
+      notice={detailsEnabled ? undefined : '這一頁目前在官網上是隱藏的（選單、首頁都看不到）。內容先保留在這裡，之後換好名稱要重新開放時再跟工程師說。'}
       newRow={() => ({ title: '新的細節' })}
       rowTitle={(r) => r.title}
       onDeleted={(r) => removeFileIfUnused(r.image_path)}

@@ -4,19 +4,28 @@ import Base from '../layouts/Base.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import ProcessSteps from '../components/ProcessSteps.astro';
 import ContactCTA from '../components/ContactCTA.astro';
-import { site } from '../data/site';
+import { detailsEnabled, site } from '../data/site';
 import { getFeaturedProjects, getDetails, getCompanies, getSettings } from '../lib/data';
 
 const featured = await getFeaturedProjects(4);
 const details = await getDetails();
 const companies = await getCompanies();
 const settings = await getSettings();
+// 首頁背景輪播：後台「公司資料 → 首頁背景照片」上傳的照片；還沒上傳時用網站內建的工地照
+const heroSlides = settings.heroImages.length
+  ? settings.heroImages
+  : ['/images/hero-site.webp', '/images/stage-site.webp', '/images/case-tower.webp', '/images/stage-frame.webp'].map((x) => u(x));
 ---
 <Base>
   <!-- 主視覺 -->
   <section class="hero">
-    <div class="hero__bg" aria-hidden="true">
-      <img src={u('/images/hero-site.webp')} alt="" fetchpriority="high" />
+    <!-- 背景：照片輪流淡入淡出，同時緩慢推近、平移（像電影鏡頭） -->
+    <div class="hero__bg" aria-hidden="true" data-hero>
+      {heroSlides.map((src, i) => (
+        <img class:list={['hero__slide', { 'is-active': i === 0 }]} src={src} alt="" style={`--x: ${[-2, 2, -2, 2][i % 4]}%; --y: ${[-1.5, -1.5, 1.5, 1.5][i % 4]}%`}
+          fetchpriority={i === 0 ? 'high' : 'low'} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" />
+      ))}
+      <span class="hero__shine"></span>
     </div>
     <div class="container hero__inner">
       <p class="eyebrow">INTERIOR DESIGN &amp; CONSTRUCTION</p>
@@ -88,7 +97,8 @@ const settings = await getSettings();
     </div>
   </section>
 
-  <!-- 注重的細節 -->
+  <!-- 注重的細節（目前隱藏，見 src/data/site.ts 的 detailsEnabled） -->
+  {detailsEnabled && (
   <section class="section section--alt">
     <div class="container">
       <div class="section-head section-head--split reveal">
@@ -110,6 +120,7 @@ const settings = await getSettings();
       </ul>
     </div>
   </section>
+  )}
 
   <!-- 服務流程 -->
   <section class="section" id="process">
@@ -137,19 +148,46 @@ const settings = await getSettings();
   }
   @media (min-width: 768px) { .hero { min-height: 82vh; padding-bottom: 88px; } }
   .hero__bg { position: absolute; inset: 0; z-index: -2; }
-  .hero__bg img { width: 100%; height: 100%; object-fit: cover; animation: drift 20s ease-in-out infinite alternate; }
-  .hero__bg::after {
-    content: ''; position: absolute; inset: 0;
-    background:
-      linear-gradient(180deg, rgba(var(--bg-rgb), .55) 0%, rgba(var(--bg-rgb), .35) 40%, var(--bg) 100%),
-      linear-gradient(90deg, rgba(var(--bg-rgb), .75), transparent 70%);
+  .hero__bg { overflow: hidden; background: var(--bg); }
+  .hero__slide {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    opacity: 0; transition: opacity 1.6s ease;
   }
-  @keyframes drift { to { transform: scale(1.08); } }
-  /* 淺色模式：照片蓋上較厚的淺色遮罩，深色文字才清楚 */
+  .hero__slide.is-active { opacity: 1; animation: hero-cam 9s ease-out both; }
+  /* 四種鏡頭方向輪流用：推近＋往不同方向平移 */
+  @keyframes hero-cam {
+    from { transform: scale(1.02) translate(0, 0); }
+    to { transform: scale(1.14) translate(var(--x), var(--y)); }
+  }
+  /* 遮罩只壓文字那一側（左、下），照片右半邊保留原本的顏色 */
+  .hero__bg::after {
+    content: ''; position: absolute; inset: 0; z-index: 2;
+    background:
+      linear-gradient(90deg, rgba(var(--bg-rgb), .82) 0%, rgba(var(--bg-rgb), .55) 42%, rgba(var(--bg-rgb), 0) 78%),
+      linear-gradient(180deg, rgba(var(--bg-rgb), .35) 0%, rgba(var(--bg-rgb), 0) 30%, rgba(var(--bg-rgb), 0) 70%, var(--bg) 100%);
+  }
   :global([data-theme='light']) .hero__bg::after {
     background:
-      linear-gradient(180deg, rgba(var(--bg-rgb), .78) 0%, rgba(var(--bg-rgb), .62) 45%, var(--bg) 100%),
-      linear-gradient(90deg, rgba(var(--bg-rgb), .9), rgba(var(--bg-rgb), .2) 75%);
+      linear-gradient(90deg, rgba(var(--bg-rgb), .92) 0%, rgba(var(--bg-rgb), .7) 45%, rgba(var(--bg-rgb), 0) 80%),
+      linear-gradient(180deg, rgba(var(--bg-rgb), .5) 0%, rgba(var(--bg-rgb), 0) 28%, rgba(var(--bg-rgb), 0) 70%, var(--bg) 100%);
+  }
+  /* 手機畫面窄、文字蓋滿整個寬度：遮罩改成上下漸層 */
+  @media (max-width: 767px) {
+    .hero__bg::after, :global([data-theme='light']) .hero__bg::after {
+      background: linear-gradient(180deg, rgba(var(--bg-rgb), .3) 0%, rgba(var(--bg-rgb), .55) 40%, rgba(var(--bg-rgb), .82) 72%, var(--bg) 100%);
+    }
+  }
+  /* 一道淡淡的金色光，緩慢掃過畫面 */
+  .hero__shine {
+    position: absolute; inset: -20% -40%; z-index: 1; pointer-events: none;
+    background: linear-gradient(105deg, transparent 40%, rgba(215, 148, 45, .16) 50%, transparent 60%);
+    animation: hero-shine 9s ease-in-out infinite;
+  }
+  @keyframes hero-shine { from { transform: translateX(-35%); } to { transform: translateX(35%); } }
+  @media (prefers-reduced-motion: reduce) {
+    .hero__slide { transition: none; }
+    .hero__slide.is-active { animation: none; }
+    .hero__shine { display: none; }
   }
   .hero__title { margin-top: 16px; max-width: 12em; }
   .hero__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
@@ -213,3 +251,22 @@ const settings = await getSettings();
   @media (min-width: 768px) { .details { grid-template-columns: repeat(2, 1fr); gap: 24px; } }
   @media (min-width: 1200px) { .details { grid-template-columns: repeat(4, 1fr); } }
 </style>
+
+<script>
+  // 首頁背景：每 6 秒換下一張；畫面不在前景（切到別的分頁）時暫停；使用者設定「減少動態效果」時不輪播
+  const hero = document.querySelector<HTMLElement>('[data-hero]');
+  const slides = hero ? [...hero.querySelectorAll<HTMLImageElement>('.hero__slide')] : [];
+  if (slides.length > 1 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    let cur = 0;
+    window.setInterval(() => {
+      if (document.hidden) return;
+      const next = (cur + 1) % slides.length;
+      if (!slides[next].complete) { slides[next].loading = 'eager'; return; } // 下一張還沒載完就等下一輪
+      slides[cur].classList.remove('is-active');
+      slides[next].classList.add('is-active');
+      cur = next;
+    }, 6000);
+    // 第一張出來後，先在背景載入其他張
+    window.addEventListener('load', () => slides.forEach((img) => { img.loading = 'eager'; }));
+  }
+</script>

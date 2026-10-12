@@ -236,3 +236,12 @@ body { font-size: 17px; }
 .a-features input { min-height: 44px; font-weight: 700; }
 .a-features input.a-features__lead { font-weight: 400; }
 .a-features__btns { display: flex; gap: 16px; justify-content: flex-end; flex-wrap: wrap; }
+
+/* 首頁背景照片 */
+.a-hero { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 12px; }
+.a-hero li { border: 1px solid var(--line); background: var(--bg); }
+.a-hero img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.a-hero__no { display: block; padding: 6px 10px 0; font-size: 14px; color: var(--gold-text); }
+.a-hero__btns { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 0 10px 6px; }
+
+.a-notice { padding: 12px 14px; margin-bottom: 12px; border-left: 3px solid var(--amber); background: rgba(215, 148, 45, .1); color: var(--text); font-size: 15px; }

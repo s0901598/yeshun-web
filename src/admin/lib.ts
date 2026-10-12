@@ -57,6 +57,8 @@ export async function removeFileIfUnused(path: string | null | undefined) {
     supabase.from('photos').select('id', { count: 'exact', head: true }).eq('path', path),
     supabase.from('projects').select('id', { count: 'exact', head: true }).eq('cover_path', path),
     supabase.from('details').select('id', { count: 'exact', head: true }).eq('image_path', path),
+    supabase.from('companies').select('id', { count: 'exact', head: true }).eq('license_image_path', path),
+    supabase.from('site_settings').select('id', { count: 'exact', head: true }).filter('hero_images', 'cs', JSON.stringify([path])),
   ]);
   if (counts.some((c) => (c.count ?? 0) > 0)) return;
   must(await supabase.storage.from(BUCKET).remove([path]));

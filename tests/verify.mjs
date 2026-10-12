@@ -1,7 +1,7 @@
 // 完整驗證：Chromium + WebKit × 手機/平板/電腦 × 淺色/深色（預設淺色，深色是訪客自己切換）× 所有頁面，含互動狀態
 import { chromium, webkit } from 'playwright';
 const B = process.argv[2] ?? 'http://localhost:4321/yeshun-web';
-const pages = ['/', '/about/', '/projects/', '/projects/luzhou-house/', '/details/', '/process/', '/contact/'];
+const pages = ['/', '/about/', '/projects/', '/projects/luzhou-house/', '/process/', '/contact/']; // /details/ 目前隱藏（轉回首頁），另外測
 const sizes = [[390, 844, 'phone'], [820, 1180, 'tablet'], [1440, 900, 'desktop']];
 const problems = []; let checks = 0;
 const bad = (m) => problems.push(m);
@@ -64,41 +64,41 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
           await p.click('[data-menu-btn]'); await p.waitForTimeout(300);
         }
       }
-      // 選單：「關於我們」直接連到單一頁，不再有下拉選單
+      // 選單：「公司介紹」（名稱來自後台）直接連到單一頁；「注重的細節」目前隱藏
+      checks++; if (await p.evaluate(() => document.body.innerText.includes('注重的細節') || !!document.querySelector('a[href$="/details"], a[href$="/details/"]'))) bad(`${tag}: 注重的細節 still shown`);
+      checks++; if (await p.evaluate(() => [...document.querySelectorAll('.nav__link')].some((a) => a.textContent.includes('關於我們')))) bad(`${tag}: menu still says 關於我們`);
       if (path === '/') {
         checks++; if (await p.locator('.nav__sub, [data-sub-toggle]').count()) bad(`${tag}: about submenu still exists`);
         if (dev !== 'desktop') { await p.click('[data-menu-btn]'); await p.waitForTimeout(350); }
-        await p.locator('.nav__link', { hasText: '關於我們' }).click(); await p.waitForLoadState('networkidle');
-        checks++; if (!/\/about\/?$/.test(new URL(p.url()).pathname)) bad(`${tag}: 關於我們 link opened ${p.url()}`);
+        await p.locator('.nav__link', { hasText: '公司介紹' }).click(); await p.waitForLoadState('networkidle');
+        checks++; if (!/\/about\/?$/.test(new URL(p.url()).pathname)) bad(`${tag}: 公司介紹 link opened ${p.url()}`);
+        checks++; if ((await p.locator('h1').textContent()).trim() !== '公司介紹') bad(`${tag}: about h1 is not 公司介紹`);
         await p.goto(B + path, { waitUntil: 'networkidle' });
       }
-      // 關於我們頁：五格、服務項目、兩家公司左右（手機上下）、字不能太小
+      // 公司介紹頁：五格、服務項目、字不能太小；業順／耀三的公司資料區塊已移除
       if (path === '/about/') {
         const a = await p.evaluate(() => {
           const f = [...document.querySelectorAll('.feature')];
           const fs = (sel) => Math.min(...[...document.querySelectorAll(sel)].map((e) => parseFloat(getComputedStyle(e).fontSize)));
-          const c = [...document.querySelectorAll('.company')].map((e) => e.getBoundingClientRect());
           return { features: f.length, bodyFont: fs('.feature__body'), titleFont: fs('.feature__title'), services: document.querySelectorAll('.services li').length,
-            companies: c.length, sideBySide: c.length === 2 && Math.abs(c[0].top - c[1].top) < 2 && c[1].left > c[0].right,
+            companies: document.querySelectorAll('.company, .companies').length,
             noPhoto: !document.querySelector('.photo, .license'), field: document.querySelector('.hero-field') === null };
         });
-        checks++; if (a.features !== 5 || a.services !== 5 || a.companies !== 2) bad(`${tag}: about content count ${JSON.stringify(a)}`);
+        checks++; if (a.features !== 5 || a.services !== 5 || a.companies !== 0) bad(`${tag}: about content count ${JSON.stringify(a)}`);
         checks++; if (a.bodyFont < 18 || a.titleFont < 22) bad(`${tag}: about feature text too small ${JSON.stringify(a)}`);
-        checks++; if (a.sideBySide !== (dev !== 'phone')) bad(`${tag}: company columns layout ${JSON.stringify(a)}`);
         checks++; if (!a.noPhoto || !a.field) bad(`${tag}: about page has photo or 營造工程 subtitle`);
-        // 五格：淺金底（跟頁面背景不同）、標題咖啡金色；服務項目字放大；公司名稱咖啡金色
+        // 五格：淺金底（跟頁面背景不同）、標題咖啡金色；服務項目字放大
         const look = await p.evaluate(() => {
           const cs = (sel) => getComputedStyle(document.querySelector(sel));
           const gold = getComputedStyle(document.documentElement).getPropertyValue('--gold-text').trim();
           const toRgb = (hex) => { const n = parseInt(hex.slice(1), 16); return `rgb(${n >> 16}, ${(n >> 8) & 255}, ${n & 255})`; };
           return { cardBg: cs('.feature').backgroundColor, pageBg: getComputedStyle(document.body).backgroundColor,
-            titleGold: cs('.feature__title').color === toRgb(gold), nameGold: cs('.company__name').color === toRgb(gold),
-            serviceFont: parseFloat(cs('.services__main').fontSize), noteFont: parseFloat(cs('.services__note').fontSize),
-            labelFont: parseFloat(cs('.profile dt').fontSize), mapLink: !!document.querySelector('.profile a[href*="google.com/maps"]') };
+            titleGold: cs('.feature__title').color === toRgb(gold),
+            serviceFont: parseFloat(cs('.services__main').fontSize), noteFont: parseFloat(cs('.services__note').fontSize) };
         });
         checks++; if (look.cardBg === look.pageBg || look.cardBg === 'rgba(0, 0, 0, 0)') bad(`${tag}: feature cards same background as page`);
-        checks++; if (!look.titleGold || !look.nameGold) bad(`${tag}: titles not gold ${JSON.stringify(look)}`);
-        checks++; if (look.serviceFont < 21 || look.noteFont < 18 || look.labelFont < 16 || !look.mapLink) bad(`${tag}: services/company sizing ${JSON.stringify(look)}`);
+        checks++; if (!look.titleGold) bad(`${tag}: titles not gold ${JSON.stringify(look)}`);
+        checks++; if (look.serviceFont < 21 || look.noteFont < 18) bad(`${tag}: services sizing ${JSON.stringify(look)}`);
         // 手機：內文先收起，點標題展開；電腦／平板：內文直接顯示
         const shown = () => p.evaluate(() => getComputedStyle(document.querySelector('.feature__more')).display !== 'none');
         if (dev === 'phone') {
@@ -106,6 +106,14 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
           await p.locator('[data-feature-toggle]').first().click(); await p.waitForTimeout(200);
           checks++; if (!(await shown())) bad(`${tag}: tapping feature did not expand`);
         } else { checks++; if (!(await shown())) bad(`${tag}: feature body hidden on ${dev}`); }
+      }
+      // 首頁背景：好幾張照片、同一時間只有一張在顯示；第一張要完整載入；照片右側不能被遮罩壓黑／壓白
+      if (path === '/') {
+        const h = await p.evaluate(() => {
+          const s = [...document.querySelectorAll('.hero__slide')];
+          return { n: s.length, active: s.filter((x) => x.classList.contains('is-active')).length, first: s[0]?.complete && s[0].naturalWidth > 0 };
+        });
+        checks++; if (h.n < 2 || h.active !== 1 || !h.first) bad(`${tag}: hero slideshow ${JSON.stringify(h)}`);
       }
       // 互動：案例頁看大圖
       if (path.startsWith('/projects/luzhou')) {
@@ -142,6 +150,19 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
   checks++; if (await theme() !== 'light') bad(`${name}: forward button shows old theme`);
   await p.reload({ waitUntil: 'load' });
   checks++; if (await theme() !== 'light') bad(`${name}: light not kept after reload`);
+  // 首頁背景輪播：6 秒後換到下一張；/details/ 隱藏中，要轉回首頁
+  {
+    const ctx3 = await b.newContext({ viewport: { width: 1440, height: 900 } });
+    const hp = await ctx3.newPage(); await hp.goto(B + '/', { waitUntil: 'load' });
+    await hp.waitForFunction(() => [...document.querySelectorAll('.hero__slide')].every((x) => x.complete), null, { timeout: 15000 }).catch(() => {});
+    const activeIdx = () => hp.evaluate(() => [...document.querySelectorAll('.hero__slide')].findIndex((x) => x.classList.contains('is-active')));
+    const first = await activeIdx();
+    await hp.waitForTimeout(6800);
+    checks++; if (await activeIdx() === first) bad(`${name}: hero slideshow did not advance`);
+    await hp.goto(B + '/details/'); await hp.waitForURL((u) => !u.pathname.includes('/details'), { timeout: 8000 }).catch(() => {});
+    checks++; if (new URL(hp.url()).pathname.includes('/details')) bad(`${name}: /details/ did not redirect home`);
+    await ctx3.close();
+  }
   // 五格動畫：一開始看不到，捲到之後依序浮出（第 1 格先、第 5 格最後），最後全部完整顯示
   {
     const ctx2 = await b.newContext({ viewport: { width: 1440, height: 700 } }); // 五格在第一屏之外

@@ -210,11 +210,10 @@ await p.getByRole('heading', { name: '公司資料' }).waitFor();
 const yaosanCard = p.locator('.a-card', { hasText: '耀三室內裝修' }).first();
 await yaosanCard.getByLabel(/^登記字號/).fill('E2E 測試字號');
 await yaosanCard.locator('input[type=file]:not([capture])').setInputFiles(photos[0]);
-await yaosanCard.getByLabel('在官網「關於我們」顯示登記證照片').check();
 await p.getByRole('button', { name: '全部儲存並上傳' }).click();
 check(await toastHas(p, '已全部儲存'), 'company info saved');
 const { data: co } = await svc.from('companies').select('*').eq('id', 'yaosan').single();
-check(co.license_no === 'E2E 測試字號' && co.license_image_path && co.show_license_image, 'license number and certificate photo saved');
+check(co.license_no === 'E2E 測試字號' && co.license_image_path, 'license number and certificate photo saved');
 // 用「移除照片」還原
 await yaosanCard.getByLabel(/^登記字號/).fill(origCo.license_no);
 await yaosanCard.getByRole('button', { name: '移除照片' }).click();
@@ -224,10 +223,11 @@ const { data: co2 } = await svc.from('companies').select('*').eq('id', 'yaosan')
 check(co2.license_no === origCo.license_no && co2.license_image_path === origCo.license_image_path, 'company info restored; 移除照片 works');
 check(!(await svc.storage.from('photos').list('companies')).data?.some((f) => f.name === co.license_image_path.split('/').pop()), 'removed certificate file deleted from storage');
 
-// ---------- 10b. 關於我們頁：改特色、新增一格、服務項目、結語（測完用原本的資料還原） ----------
-const aboutCols = 'about_intro, about_features, about_services, closing_quote, closing_text';
+// ---------- 10b. 公司介紹頁：改名稱、改特色、新增一格、服務項目、結語（測完用原本的資料還原） ----------
+const aboutCols = 'about_title, about_intro, about_features, about_services, closing_quote, closing_text';
 const { data: origAbout } = await svc.from('site_settings').select(aboutCols).eq('id', 1).single();
-const aboutCard = p.locator('.a-card', { hasText: '關於我們頁' });
+const aboutCard = p.locator('.a-card', { hasText: '公司介紹頁' });
+await aboutCard.getByLabel(/^頁面名稱/).fill('E2E 頁面名稱');
 await aboutCard.getByLabel('第 1 格標題').fill('E2E 特色標題');
 await aboutCard.getByRole('button', { name: '＋ 新增一格' }).click();
 const newNo = origAbout.about_features.length + 1;
@@ -241,10 +241,34 @@ const { data: ab } = await svc.from('site_settings').select(aboutCols).eq('id', 
 check(ab.about_features.length === newNo && ab.about_features[0].title === 'E2E 特色標題' && ab.about_features[newNo - 2].title === 'E2E 新增格',
   'feature edited, added and moved up');
 check(ab.closing_quote === 'E2E 引言', 'quote saved without 「」');
+check(ab.about_title === 'E2E 頁面名稱', 'page name saved');
 check(JSON.stringify(ab.about_services) === JSON.stringify(origAbout.about_services), 'unchanged services kept as list');
 await svc.from('site_settings').update(origAbout).eq('id', 1);
 const { data: ab2 } = await svc.from('site_settings').select(aboutCols).eq('id', 1).single();
 check(JSON.stringify(ab2) === JSON.stringify(origAbout), 'about page content restored');
+
+// ---------- 10c. 首頁背景照片：上傳兩張、調順序、刪掉一張；測完還原、檔案清掉 ----------
+const { data: origHero } = await svc.from('site_settings').select('hero_images').eq('id', 1).single();
+await p.reload(); await p.getByRole('heading', { name: '公司資料' }).waitFor();
+const heroCard = p.locator('.a-card', { hasText: '首頁背景照片' });
+await heroCard.locator('input[type=file]:not([capture])').setInputFiles([photos[0], photos[1]]);
+const base = origHero.hero_images.length;
+await heroCard.getByRole('button', { name: `第 ${base + 2} 張往前` }).click();
+await p.getByRole('button', { name: '全部儲存並上傳' }).click();
+check(await toastHas(p, '已全部儲存'), 'hero photos uploaded');
+const { data: h1 } = await svc.from('site_settings').select('hero_images').eq('id', 1).single();
+check(h1.hero_images.length === base + 2 && h1.hero_images.every((x) => x.startsWith('hero/')), 'hero photos saved in order');
+const heroFiles = async () => ((await svc.storage.from('photos').list('hero')).data ?? []).map((f) => `hero/${f.name}`);
+const stored = await heroFiles();
+check(h1.hero_images.slice(base).every((x) => stored.includes(x)), 'hero files in storage');
+await heroCard.getByRole('button', { name: `刪除第 ${base + 1} 張` }).click();
+await heroCard.getByRole('button', { name: `刪除第 ${base + 1} 張` }).click();
+await p.getByRole('button', { name: '全部儲存並上傳' }).click();
+await toastHas(p, '已全部儲存');
+const { data: h2 } = await svc.from('site_settings').select('hero_images').eq('id', 1).single();
+const left = await heroFiles();
+check(JSON.stringify(h2.hero_images) === JSON.stringify(origHero.hero_images), 'hero photos restored');
+check(h1.hero_images.slice(base).every((x) => !left.includes(x)), 'deleted hero files removed from storage');
 
 const errs = p.errors;
 await browser.close();

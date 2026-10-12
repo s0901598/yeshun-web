@@ -4,7 +4,10 @@ import Base from '../layouts/Base.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import Todo from '../components/Todo.astro';
 import { getDetails } from '../lib/data';
+import { detailsEnabled } from '../data/site';
 
+// 目前隱藏：網址直接轉回首頁（src/data/site.ts 的 detailsEnabled 改成 true 就恢復）
+if (!detailsEnabled) return Astro.redirect(u('/'));
 const details = await getDetails();
 ---
 <Base title="我們注重的細節" description="防水、水電、隱蔽工程、工地整潔——業順營造在看不見的地方下功夫。">
