@@ -1,4 +1,4 @@
-/* 配色沿用舊站：深灰底、香檳金、橘金。預設深色，data-theme="light" 為淺色 */
+/* 配色沿用舊站：深灰底、香檳金、橘金。:root 是深色（黑配金），data-theme="light" 是淺色（白配金）；網站預設淺色 */
 :root {
   color-scheme: dark;
   --bg: #1a1a1a;
@@ -31,16 +31,17 @@
 /* 淺色模式：黑白對調，金色線條保留，金色文字加深以維持清晰度 */
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: #f7f5f1;
-  --bg-rgb: 247, 245, 241;
-  --bg-2: #efebe4;
-  --bg2-rgb: 239, 235, 228;
+  /* 白底：主背景純白，交錯區塊用很淡的中性灰（不帶米色） */
+  --bg: #ffffff;
+  --bg-rgb: 255, 255, 255;
+  --bg-2: #f5f5f5;
+  --bg2-rgb: 245, 245, 245;
   --surface: #ffffff;
   --surface-rgb: 255, 255, 255;
-  --surface-2: #f2eee8;
+  --surface-2: #f0f0f0;
   --line: rgba(154, 118, 80, 0.28);
   --line-strong: rgba(154, 118, 80, 0.6);
-  --gold-text: #8f6b45;
+  --gold-text: #94703a;   /* 偏金不偏咖啡，白底上仍清楚（對比 4.5） */
   --amber-text: #a3650f;
   --danger: #b8432a;
   --text: #1c1b1a;
@@ -152,6 +153,8 @@ h1, h2, h3 { font-weight: 700; line-height: 1.3; letter-spacing: 0.02em; }
 @media (min-width: 768px) { .page-hero { padding: calc(var(--header-h) + 88px) 0 80px; } }
 .page-hero__bg { position: absolute; inset: 0; z-index: -1; }
 .page-hero__bg img { width: 100%; height: 100%; object-fit: cover; opacity: .28; }
+/* 淺色模式：標題背景照片轉黑白，避免夕陽照片讓白底看起來偏咖啡色 */
+:root[data-theme='light'] .page-hero__bg img, :root[data-theme='light'] .hero__bg img { filter: grayscale(1); }
 .page-hero__bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(var(--bg-rgb), .6), var(--bg)); }
 
 /* 手機選單打開時鎖住背景捲動 */

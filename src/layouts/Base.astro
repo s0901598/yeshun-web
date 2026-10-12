@@ -23,17 +23,19 @@ const isActive = (href: string) => path === u(href) || path.startsWith(u(href) +
     {noindex && <meta name="robots" content="noindex, nofollow" />}
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
-    <meta name="theme-color" content="#f7f5f1" data-theme-color />
+    <meta name="theme-color" content="#ffffff" data-theme-color />
     <script is:inline define:vars={{ darkModeEnabled }}>
-      // 在畫面出現前決定主題，避免閃一下：預設淺色；訪客按過切換鈕選了深色才用深色
+      // 在畫面出現前決定主題，避免閃一下：預設淺色；訪客按過切換鈕選了深色才用深色。
+      // 選擇存在 localStorage；手機封鎖網站資料時改記在分頁的 window.name（同一個分頁換頁仍有效）
       (function () {
         var t = 'light';
         if (darkModeEnabled) {
-          try { t = localStorage.getItem('theme'); } catch (e) {}
+          try { t = localStorage.getItem('theme'); } catch (e) { t = null; }
+          if (!t) { var m = /(?:^|;)yeshun-theme=(dark|light)/.exec(window.name); t = m && m[1]; }
           if (t !== 'dark') t = 'light';
         }
         document.documentElement.dataset.theme = t;
-        document.querySelector('[data-theme-color]').content = t === 'light' ? '#f7f5f1' : '#1a1a1a';
+        document.querySelector('[data-theme-color]').content = t === 'light' ? '#ffffff' : '#1a1a1a';
       })();
     </script>
     <link rel="icon" type="image/png" href={u('/favicon.png')} />
@@ -153,17 +155,19 @@ const isActive = (href: string) => path === u(href) || path.startsWith(u(href) +
       const themeColor = document.querySelector<HTMLMetaElement>('[data-theme-color]');
       const applyTheme = (t: string) => {
         root.dataset.theme = t;
-        if (themeColor) themeColor.content = t === 'light' ? '#f7f5f1' : '#1a1a1a';
+        if (themeColor) themeColor.content = t === 'light' ? '#ffffff' : '#1a1a1a';
       };
       document.querySelector('[data-theme-btn]')?.addEventListener('click', () => {
         const next = root.dataset.theme === 'light' ? 'dark' : 'light';
         applyTheme(next);
         try { localStorage.setItem('theme', next); } catch {}
+        window.name = `${window.name.replace(/(?:^|;)yeshun-theme=(dark|light)/, '')};yeshun-theme=${next}`;
       });
       // 按「上一頁」時瀏覽器會拿出暫存的舊畫面，顏色可能是換頁前的；回來時、或在別的分頁改過時，重新套用記住的選擇
       const savedTheme = () => {
         let t: string | null = null;
         try { t = localStorage.getItem('theme'); } catch {}
+        t ||= /(?:^|;)yeshun-theme=(dark|light)/.exec(window.name)?.[1] ?? null;
         return darkModeEnabled && t === 'dark' ? 'dark' : 'light';
       };
       window.addEventListener('pageshow', () => applyTheme(savedTheme()));

@@ -28,6 +28,9 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
       });
       broken.forEach((x) => bad(`${tag}: broken image ${x}`));
       checks++; if (await p.evaluate(() => document.documentElement.dataset.theme) !== scheme) bad(`${tag}: theme mismatch`);
+      // 淺色＝白底、深色＝黑底（不能是米色／咖啡色）
+      const bodyBg = await p.evaluate(() => getComputedStyle(document.body).backgroundColor);
+      checks++; if (bodyBg !== (scheme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(26, 26, 26)')) bad(`${tag}: background ${bodyBg}`);
       checks++; if (!(await p.locator('[data-theme-btn]').isVisible())) bad(`${tag}: theme toggle missing`);
       // Logo 兩行：同一欄中文、英文的頭尾對齊（扣掉最後一個字後面的字距），且不能壓到右邊的按鈕
       const brand = await p.evaluate(() => {
@@ -119,6 +122,16 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
   checks++; if (await theme() !== 'light') bad(`${name}: forward button shows old theme`);
   await p.reload({ waitUntil: 'load' });
   checks++; if (await theme() !== 'light') bad(`${name}: light not kept after reload`);
+  // 手機封鎖網站資料（localStorage 不能用）時，同一個分頁換頁也要記得選的顏色
+  const blocked = await b.newContext({ viewport: { width: 390, height: 844 } });
+  await blocked.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked'); } }); });
+  const bp = await blocked.newPage();
+  await bp.goto(B + '/', { waitUntil: 'load' });
+  await bp.click('[data-theme-btn]');
+  await bp.click('[data-menu-btn]'); await bp.waitForTimeout(400);
+  await Promise.all([bp.waitForNavigation(), bp.locator('.nav__link', { hasText: '案例作品' }).click()]);
+  checks++; if (await bp.evaluate(() => document.documentElement.dataset.theme) !== 'dark') bad(`${name}: theme lost when storage blocked`);
+  await blocked.close();
   for (const old of ['/about/yeshun/', '/about/yaosan/']) {
     await p.goto(B + old); await p.waitForURL(/\/about\/$/, { timeout: 5000 }).catch(() => {});
     checks++; if (!new URL(p.url()).pathname.endsWith('/about/')) bad(`${name}: ${old} did not redirect (${p.url()})`);
