@@ -86,6 +86,26 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
         checks++; if (a.bodyFont < 18 || a.titleFont < 22) bad(`${tag}: about feature text too small ${JSON.stringify(a)}`);
         checks++; if (a.sideBySide !== (dev !== 'phone')) bad(`${tag}: company columns layout ${JSON.stringify(a)}`);
         checks++; if (!a.noPhoto || !a.field) bad(`${tag}: about page has photo or 營造工程 subtitle`);
+        // 五格：淺金底（跟頁面背景不同）、標題咖啡金色；服務項目字放大；公司名稱咖啡金色
+        const look = await p.evaluate(() => {
+          const cs = (sel) => getComputedStyle(document.querySelector(sel));
+          const gold = getComputedStyle(document.documentElement).getPropertyValue('--gold-text').trim();
+          const toRgb = (hex) => { const n = parseInt(hex.slice(1), 16); return `rgb(${n >> 16}, ${(n >> 8) & 255}, ${n & 255})`; };
+          return { cardBg: cs('.feature').backgroundColor, pageBg: getComputedStyle(document.body).backgroundColor,
+            titleGold: cs('.feature__title').color === toRgb(gold), nameGold: cs('.company__name').color === toRgb(gold),
+            serviceFont: parseFloat(cs('.services__main').fontSize), noteFont: parseFloat(cs('.services__note').fontSize),
+            labelFont: parseFloat(cs('.profile dt').fontSize), mapLink: !!document.querySelector('.profile a[href*="google.com/maps"]') };
+        });
+        checks++; if (look.cardBg === look.pageBg || look.cardBg === 'rgba(0, 0, 0, 0)') bad(`${tag}: feature cards same background as page`);
+        checks++; if (!look.titleGold || !look.nameGold) bad(`${tag}: titles not gold ${JSON.stringify(look)}`);
+        checks++; if (look.serviceFont < 21 || look.noteFont < 18 || look.labelFont < 16 || !look.mapLink) bad(`${tag}: services/company sizing ${JSON.stringify(look)}`);
+        // 手機：內文先收起，點標題展開；電腦／平板：內文直接顯示
+        const shown = () => p.evaluate(() => getComputedStyle(document.querySelector('.feature__more')).display !== 'none');
+        if (dev === 'phone') {
+          checks++; if (await shown()) bad(`${tag}: feature body not collapsed on phone`);
+          await p.locator('[data-feature-toggle]').first().click(); await p.waitForTimeout(200);
+          checks++; if (!(await shown())) bad(`${tag}: tapping feature did not expand`);
+        } else { checks++; if (!(await shown())) bad(`${tag}: feature body hidden on ${dev}`); }
       }
       // 互動：案例頁看大圖
       if (path.startsWith('/projects/luzhou')) {
@@ -122,6 +142,21 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
   checks++; if (await theme() !== 'light') bad(`${name}: forward button shows old theme`);
   await p.reload({ waitUntil: 'load' });
   checks++; if (await theme() !== 'light') bad(`${name}: light not kept after reload`);
+  // 五格動畫：一開始看不到，捲到之後依序浮出（第 1 格先、第 5 格最後），最後全部完整顯示
+  {
+    const ctx2 = await b.newContext({ viewport: { width: 1440, height: 700 } }); // 五格在第一屏之外
+    const ap = await ctx2.newPage(); await ap.goto(B + '/about/', { waitUntil: 'networkidle' });
+    const op = () => ap.evaluate(() => [...document.querySelectorAll('.feature')].map((f) => +getComputedStyle(f).opacity));
+    const before = await op();
+    await ap.locator('.features').scrollIntoViewIfNeeded(); await ap.waitForTimeout(350);
+    const mid = await op();
+    await ap.waitForTimeout(1600);
+    const after = await op();
+    checks++; if (!before.every((x) => x === 0)) bad(`${name}: features visible before scrolling ${before}`);
+    checks++; if (!(mid[0] > mid[4])) bad(`${name}: features not staggered ${mid}`);
+    checks++; if (!after.every((x) => x === 1)) bad(`${name}: features not all shown ${after}`);
+    await ctx2.close();
+  }
   // 手機封鎖網站資料（localStorage 不能用）時，同一個分頁換頁也要記得選的顏色
   const blocked = await b.newContext({ viewport: { width: 390, height: 844 } });
   await blocked.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked'); } }); });

@@ -128,7 +128,7 @@ export interface Settings {
   phone: string; phoneHref: string; lineId: string; lineHref: string; email: string; emailHref: string;
   address: string; hours: string; mapEmbed: string; stats: { label: string; value: number; suffix: string }[];
   // 關於我們頁與全站結語
-  aboutIntro: string[]; aboutFeatures: { title: string; body: string }[]; aboutServices: string[];
+  aboutIntro: string[]; aboutFeatures: { title: string; lead: string; body: string }[]; aboutServices: string[];
   closingQuote: string; closingText: string;
 }
 
@@ -148,7 +148,7 @@ export function getSettings(): Promise<Settings> {
         .map((x: any) => ({ label: String(x.label), value: Number(x.value), suffix: String(x.suffix ?? '') })),
       aboutIntro: lines(r.about_intro),
       aboutFeatures: (r.about_features ?? []).filter((x: any) => x?.title?.trim() || x?.body?.trim())
-        .map((x: any) => ({ title: String(x.title ?? '').trim(), body: String(x.body ?? '').trim() })),
+        .map((x: any) => ({ title: String(x.title ?? '').trim(), lead: String(x.lead ?? '').trim(), body: String(x.body ?? '').trim() })),
       aboutServices: (r.about_services ?? []).map((x: any) => String(x).trim()).filter(Boolean),
       closingQuote: r.closing_quote.trim(), closingText: r.closing_text.trim(),
     };

@@ -31,12 +31,19 @@ const services = settings.aboutServices.map((s) => {
   {settings.aboutFeatures.length > 0 && (
     <section class="section">
       <div class="container">
-        <ul class="features">
+        <!-- 捲到這裡時一格一格浮出；手機只顯示標題，點一下展開內文 -->
+        <ul class="features" data-stagger>
           {settings.aboutFeatures.map((f, i) => (
-            <li class="feature reveal">
-              <p class="feature__no mono">{String(i + 1).padStart(2, '0')}</p>
-              {f.title && <h2 class="feature__title">{f.title}</h2>}
-              {f.body && <p class="feature__body">{f.body}</p>}
+            <li class="feature" style={`--i: ${i}`}>
+              <button type="button" class="feature__head" aria-expanded="false" aria-controls={`feature-${i}`} data-feature-toggle>
+                <span class="feature__no mono">{String(i + 1).padStart(2, '0')}</span>
+                {f.title && <h2 class="feature__title">{f.title}</h2>}
+                <span class="feature__plus" aria-hidden="true"></span>
+              </button>
+              <div class="feature__more" id={`feature-${i}`}>
+                {f.lead && <p class="feature__lead">{f.lead}</p>}
+                {f.body && <p class="feature__body">{f.body}</p>}
+              </div>
             </li>
           ))}
         </ul>
@@ -95,10 +102,30 @@ const services = settings.aboutServices.map((s) => {
             <p class="company__en mono">{c.englishName}</p>
             <h3 class="company__name">{c.name}</h3>
             <dl class="profile">
-              {c.field && <div><dt class="mono">FIELD</dt><dd>{c.field}</dd></div>}
-              {c.licenseNo && <div><dt class="mono">LICENSE</dt><dd>{c.licenseNo}</dd></div>}
-              {settings.address && <div><dt class="mono">ADDRESS</dt><dd>{settings.address}</dd></div>}
-              {settings.email && <div><dt class="mono">EMAIL</dt><dd><a href={settings.emailHref}>{settings.email}</a></dd></div>}
+              {c.field && (
+                <div>
+                  <dt><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6" /></svg>業務類別<span class="mono">FIELD</span></dt>
+                  <dd>{c.field}</dd>
+                </div>
+              )}
+              {c.licenseNo && (
+                <div>
+                  <dt><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="1" /><path d="M8 8h8M8 12h8M8 16h5" /></svg>登記字號<span class="mono">LICENSE</span></dt>
+                  <dd>{c.licenseNo}</dd>
+                </div>
+              )}
+              {settings.address && (
+                <div>
+                  <dt><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12Z" /><circle cx="12" cy="9" r="2.5" /></svg>地址<span class="mono">ADDRESS</span></dt>
+                  <dd><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.address)}`} target="_blank" rel="noopener">{settings.address}<span class="profile__go" aria-hidden="true">↗</span></a></dd>
+                </div>
+              )}
+              {settings.email && (
+                <div>
+                  <dt><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1" /><path d="m3 7 9 6 9-6" /></svg>Email<span class="mono">EMAIL</span></dt>
+                  <dd><a href={settings.emailHref}>{settings.email}<span class="profile__go" aria-hidden="true">→</span></a></dd>
+                </div>
+              )}
             </dl>
           </div>
         ))}
@@ -109,43 +136,118 @@ const services = settings.aboutServices.map((s) => {
   <ContactCTA />
 </Base>
 
+<script>
+  // 手機版：點標題展開／收起內文（電腦版內文一直顯示，按鈕不作用）
+  document.querySelectorAll<HTMLButtonElement>('[data-feature-toggle]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (window.matchMedia('(min-width: 768px)').matches) return;
+      const open = btn.getAttribute('aria-expanded') !== 'true';
+      btn.setAttribute('aria-expanded', String(open));
+      btn.closest('.feature')?.classList.toggle('is-open', open);
+    });
+  });
+</script>
+
 <style>
   .intro { max-width: 820px; margin-top: 28px; display: grid; gap: 18px; }
   .intro p { color: var(--text-2); font-size: clamp(18px, 1.9vw, 21px); line-height: 1.9; }
 
-  .features { display: grid; gap: 16px; }
-  .feature { border: 1px solid var(--line); background: rgba(var(--surface-rgb), .7); padding: 28px 24px; }
-  .feature__no { font-size: 14px; color: var(--gold-text); }
-  .feature__title { font-size: clamp(22px, 2.4vw, 26px); margin: 10px 0 12px; line-height: 1.4; }
+  /* 五格：淺金底卡片，捲到時依序浮出，頂端金線畫出 */
+  .features { display: grid; gap: 14px; }
+  /* 進場用動畫（opacity＋translate），hover 用 transform，兩者互不干擾；也避免 Safari 載入時先閃一下 */
+  .feature {
+    position: relative; overflow: hidden;
+    background: rgba(195, 162, 127, .14); border: 1px solid var(--line);
+    opacity: 0; translate: 0 28px;
+    transition: border-color .3s, box-shadow .3s, transform .3s;
+  }
+  :global([data-theme='dark']) .feature { background: rgba(195, 162, 127, .08); }
+  .feature::before { content: ''; position: absolute; left: 0; top: 0; height: 3px; width: 0; background: var(--gold); }
+  .features.is-in .feature { animation: feature-in .6s cubic-bezier(.2, .7, .2, 1) calc(var(--i) * .15s) both; }
+  .features.is-in .feature::before { animation: feature-line .8s ease calc(var(--i) * .15s + .3s) both; }
+  @keyframes feature-in { from { opacity: 0; translate: 0 28px; } to { opacity: 1; translate: 0 0; } }
+  @keyframes feature-line { from { width: 0; } to { width: 100%; } }
+  .feature__head {
+    display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px;
+    width: 100%; padding: 22px 20px; text-align: left; cursor: pointer; color: inherit;
+  }
+  .feature__no { font-size: 15px; color: var(--gold-text); font-weight: 500; transition: transform .3s; transform-origin: left center; }
+  .feature__title { font-size: clamp(22px, 2.3vw, 25px); line-height: 1.4; color: var(--gold-text); }
+  .feature__plus { position: relative; width: 16px; height: 16px; }
+  .feature__plus::before, .feature__plus::after {
+    content: ''; position: absolute; left: 0; top: 7px; width: 16px; height: 2px; background: var(--gold); transition: transform .3s;
+  }
+  .feature__plus::after { transform: rotate(90deg); }
+  .feature.is-open .feature__plus::after { transform: rotate(0); }
+  .feature__more { display: none; padding: 0 20px 24px; }
+  .feature.is-open .feature__more { display: block; animation: fade-in .35s ease; }
+  .feature__lead { font-size: 19px; font-weight: 700; line-height: 1.6; margin-bottom: 8px; }
   .feature__body { color: var(--text-2); font-size: 18px; line-height: 1.85; }
-  @media (min-width: 768px) { .features { grid-template-columns: repeat(2, 1fr); gap: 24px; } }
+  @keyframes fade-in { from { opacity: 0; transform: translateY(-6px); } }
+
+  @media (min-width: 768px) {
+    .features { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    .feature__head { display: block; padding: 30px 28px 0; cursor: default; }
+    .feature__no { display: block; margin-bottom: 12px; }
+    .feature__plus { display: none; }
+    .feature__more { display: block; padding: 14px 28px 32px; }
+    .feature.is-open .feature__more { animation: none; }
+    .features.is-in .feature:hover { border-color: var(--line-strong); box-shadow: 0 14px 34px rgba(0, 0, 0, .1); transform: translateY(-6px); }
+    .features.is-in .feature:hover .feature__no { transform: scale(1.35); }
+  }
   @media (min-width: 1200px) {
     /* 一排 3 格，第二排 2 格置中 */
     .features { grid-template-columns: repeat(6, 1fr); }
     .feature { grid-column: span 2; }
     .feature:nth-child(4):nth-last-child(2) { grid-column: 2 / span 2; }
   }
+  @media (prefers-reduced-motion: reduce) {
+    .feature, .features.is-in .feature, .features.is-in .feature::before { opacity: 1; translate: none; animation: none; }
+    .feature::before { width: 100%; }
+  }
 
   .split { display: grid; gap: 32px; align-items: start; }
   @media (min-width: 1200px) { .split { grid-template-columns: 1fr 1.6fr; gap: 80px; } }
   .services { border-top: 1px solid var(--line); }
-  .services li { display: flex; gap: 20px; align-items: baseline; padding: 18px 0; border-bottom: 1px solid var(--line); }
-  .services__no { font-size: 14px; color: var(--gold-text); flex: none; }
-  .services__main { display: block; font-size: 20px; font-weight: 500; }
-  .services__note { display: block; margin-top: 4px; font-size: 16px; color: var(--text-2); }
+  .services li {
+    position: relative; display: flex; gap: 20px; align-items: baseline; padding: 22px 0 22px 0;
+    border-bottom: 1px solid var(--line); transition: padding-left .3s;
+  }
+  .services li::before { content: ''; position: absolute; left: 0; top: 22px; bottom: 22px; width: 0; background: var(--gold); transition: width .3s; }
+  .services__no { font-size: 16px; color: var(--gold-text); flex: none; }
+  .services__main { display: block; font-size: clamp(21px, 2.2vw, 24px); font-weight: 500; transition: color .3s; }
+  .services__note { display: block; margin-top: 6px; font-size: 18px; color: var(--text-2); }
+  @media (hover: hover) {
+    .services li:hover { padding-left: 16px; }
+    .services li:hover::before { width: 3px; }
+    .services li:hover .services__main { color: var(--gold-text); }
+  }
 
   .cases { display: grid; gap: 20px; }
   @media (min-width: 768px) { .cases { grid-template-columns: repeat(2, 1fr); gap: 24px; } }
   @media (min-width: 1200px) { .cases { grid-template-columns: repeat(3, 1fr); } }
 
-  .companies { display: grid; gap: 40px; }
-  @media (min-width: 768px) { .companies { grid-template-columns: 1fr 1fr; gap: 48px; } }
-  .company__en { font-size: 13px; color: var(--gold-text); letter-spacing: .1em; }
-  .company__name { font-size: clamp(24px, 3vw, 32px); margin-top: 8px; }
-  .profile { margin-top: 20px; border-top: 1px solid var(--line); }
-  .profile div { display: grid; grid-template-columns: 1fr; gap: 4px; padding: 14px 0; border-bottom: 1px solid var(--line); }
-  .profile dt { font-size: 12px; color: var(--gold-text); }
-  .profile dd { color: var(--text-2); overflow-wrap: anywhere; }
-  .profile a:hover { color: var(--gold-text); }
-  @media (min-width: 1200px) { .profile div { grid-template-columns: 120px 1fr; gap: 16px; } }
+  /* 公司資料：兩張卡片，名稱咖啡金色，欄位有圖示＋中文標題，地址／Email 可點 */
+  .companies { display: grid; gap: 20px; }
+  @media (min-width: 768px) { .companies { grid-template-columns: 1fr 1fr; gap: 24px; } }
+  .company {
+    background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--gold);
+    padding: 28px 22px 12px; transition: opacity .7s ease, border-color .3s, box-shadow .3s, transform .5s ease;
+  }
+  @media (hover: hover) {
+    .company.is-in:hover { border-color: var(--line-strong); border-top-color: var(--gold); box-shadow: 0 14px 34px rgba(0, 0, 0, .1); transform: translateY(-4px); }
+  }
+  @media (min-width: 768px) { .company { padding: 34px 32px 16px; } }
+  .company__en { font-size: 13px; color: var(--text-3); letter-spacing: .12em; }
+  .company__name { font-size: clamp(25px, 3vw, 32px); margin-top: 6px; color: var(--gold-text); }
+  .profile { margin-top: 18px; }
+  .profile div { display: grid; grid-template-columns: 1fr; gap: 6px; padding: 16px 0; border-top: 1px solid var(--line); }
+  .profile dt { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 700; color: var(--text); }
+  .profile dt svg { width: 20px; height: 20px; flex: none; fill: none; stroke: var(--gold-text); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .profile dt .mono { font-size: 11px; font-weight: 400; color: var(--text-3); letter-spacing: .12em; margin-left: 2px; }
+  .profile dd { color: var(--text-2); font-size: 18px; padding-left: 28px; overflow-wrap: anywhere; }
+  .profile a { display: inline-flex; align-items: baseline; gap: 6px; border-bottom: 1px solid transparent; transition: color .25s, border-color .25s; }
+  .profile a:hover { color: var(--gold-text); border-bottom-color: var(--gold); }
+  .profile__go { color: var(--gold-text); font-size: 15px; transition: transform .25s; }
+  .profile a:hover .profile__go { transform: translateX(3px); }
 </style>

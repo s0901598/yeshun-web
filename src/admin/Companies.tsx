@@ -8,7 +8,7 @@ interface CompanyRow {
   id: 'yeshun' | 'yaosan'; name: string; short_name: string; english_name: string; field: string; intro: string;
   services: string[]; license_no: string; license_image_path: string | null; show_license_image: boolean; sort: number;
 }
-interface Feature { title: string; body: string }
+interface Feature { title: string; lead?: string; body: string }
 interface SettingsRow {
   phone: string; line_id: string; line_url: string; email: string; address: string; hours: string;
   stats: { label: string; value: number | string; suffix: string }[];
@@ -89,7 +89,7 @@ export default function Companies() {
           email: settings.email.trim(), address: settings.address.trim(), hours: settings.hours.trim(),
           stats: settings.stats.filter((x) => x.label.trim()).map((x) => ({ label: x.label.trim(), value: Number(x.value), suffix: x.suffix.trim() })),
           about_intro: lines(settings.about_intro).join('\n'),
-          about_features: settings.about_features.map((f) => ({ title: f.title.trim(), body: f.body.trim() })).filter((f) => f.title || f.body),
+          about_features: settings.about_features.map((f) => ({ title: f.title.trim(), lead: (f.lead ?? '').trim(), body: f.body.trim() })).filter((f) => f.title || f.body),
           about_services: lines(settings.about_services),
           closing_quote: settings.closing_quote.trim().replace(/^「|」$/g, ''), closing_text: settings.closing_text.trim(),
         }).eq('id', 1));
@@ -114,6 +114,7 @@ export default function Companies() {
         <Field label="介紹" hint="一行就是一段"><textarea rows={8} value={settings.about_intro} onInput={setS('about_intro')} /></Field>
 
         <h4 class="a-subhead">特色（每一項是一格）</h4>
+        <p class="a-hint">官網上會一格一格依序浮出；手機版只顯示標題，點一下才展開內文。</p>
         <ul class="a-features">
           {settings.about_features.map((f, i) => (
             <li>
@@ -121,6 +122,7 @@ export default function Companies() {
                 <span class="a-features__no">{String(i + 1).padStart(2, '0')}</span>
                 <input aria-label={`第 ${i + 1} 格標題`} placeholder="標題，例：精湛工藝，嚴格把關" value={f.title} onInput={(e) => setFeature(i, 'title', (e.target as HTMLInputElement).value)} />
               </div>
+              <input class="a-features__lead" aria-label={`第 ${i + 1} 格重點句`} placeholder="重點句（選填，大字顯示在內文上方），例：從原料到竣工，層層把關" value={f.lead ?? ''} onInput={(e) => setFeature(i, 'lead', (e.target as HTMLInputElement).value)} />
               <textarea aria-label={`第 ${i + 1} 格內文`} rows={3} placeholder="內文" value={f.body} onInput={(e) => setFeature(i, 'body', (e.target as HTMLTextAreaElement).value)} />
               <div class="a-features__btns">
                 <button type="button" class="a-text-btn" disabled={i === 0} onClick={() => moveFeature(i, -1)}>↑ 上移</button>
@@ -130,7 +132,7 @@ export default function Companies() {
             </li>
           ))}
         </ul>
-        <button type="button" class="a-btn a-btn--ghost a-btn--small" onClick={() => setFeatures([...settings.about_features, { title: '', body: '' }])}>＋ 新增一格</button>
+        <button type="button" class="a-btn a-btn--ghost a-btn--small" onClick={() => setFeatures([...settings.about_features, { title: '', lead: '', body: '' }])}>＋ 新增一格</button>
 
         <h4 class="a-subhead">服務項目</h4>
         <Field label="服務項目" hint="一行寫一項。括號裡的文字會變成小字說明，例：廠房與公共工程（工業廠房、公共基礎建設）"><textarea rows={6} value={settings.about_services} onInput={setS('about_services')} /></Field>
