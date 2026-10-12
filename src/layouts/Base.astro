@@ -51,7 +51,7 @@ const isActive = (href: string) => path === u(href) || path.startsWith(u(href) +
         </a>
 
         <nav class="nav" id="site-nav" aria-label="主選單" data-nav>
-          <ul>
+          <ul class="nav__list">
             {nav.map((item) => item.children ? (
               <li class="nav__group" data-sub>
                 <button type="button" class:list={['nav__link', 'nav__toggle', { 'is-active': isActive(item.href) }]}
@@ -272,7 +272,7 @@ const isActive = (href: string) => path === u(href) || path.startsWith(u(href) +
     overflow-y: auto;
   }
   .nav.is-open { opacity: 1; visibility: visible; transform: none; }
-  .nav ul { display: flex; flex-direction: column; }
+  .nav__list { display: flex; flex-direction: column; }
   .nav__link {
     display: flex; align-items: baseline; gap: 16px;
     padding: 18px 0; border-bottom: 1px solid var(--line);
@@ -329,7 +329,7 @@ const isActive = (href: string) => path === u(href) || path.startsWith(u(href) +
       background: none; padding: 0; overflow: visible;
       flex-direction: row; align-items: center; gap: 36px; margin-left: auto; margin-right: 16px;
     }
-    .nav ul { flex-direction: row; gap: 32px; }
+    .nav__list { flex-direction: row; gap: 32px; }
     .nav__link {
       flex-direction: column; gap: 0; align-items: flex-start;
       padding: 0; border: 0; font-size: 17px; position: relative;

@@ -43,6 +43,9 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
       }
       // 互動：「關於我們」子選單——手機在選單裡展開、電腦是下拉選單，兩個子項目都要看得到、點得到
       if (path === '/') {
+        // 還沒打開前，子選單必須是收起來的（看不到）
+        const closed = await p.evaluate(() => getComputedStyle(document.querySelector('.nav__sub')).display === 'none');
+        checks++; if (!closed) bad(`${tag}: 關於我們 submenu visible before opening`);
         if (dev !== 'desktop') {
           await p.click('[data-menu-btn]'); await p.waitForTimeout(350);
           await p.click('[data-sub-toggle]'); await p.waitForTimeout(250);
@@ -53,6 +56,9 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
           const r = a.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.bottom <= innerHeight && r.top >= 0;
         }));
         checks++; if (subs.length !== 2 || !subs.every(Boolean)) bad(`${tag}: 關於我們 submenu not fully visible ${JSON.stringify(subs)}`);
+        // 子項目要上下排列，不能擠成同一排（文字被折成兩行）
+        const stacked = await p.evaluate(() => { const r = [...document.querySelectorAll('.nav__sublink')].map((a) => a.getBoundingClientRect()); return r[1].top >= r[0].bottom - 1 && r.every((x) => x.height < 60); });
+        checks++; if (!stacked) bad(`${tag}: 關於我們 submenu items not stacked one per line`);
         await p.locator('.nav__sublink', { hasText: '耀三' }).click(); await p.waitForLoadState('networkidle');
         checks++; if (!p.url().includes('/about/yaosan')) bad(`${tag}: submenu link did not open 耀三 page (${p.url()})`);
         await p.goto(B + path, { waitUntil: 'networkidle' });
