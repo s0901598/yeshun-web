@@ -26,11 +26,11 @@ const isActive = (href: string) => path === u(href) || path.startsWith(u(href) +
     <meta name="theme-color" content="#ffffff" data-theme-color />
     <script is:inline define:vars={{ darkModeEnabled }}>
       // 在畫面出現前決定主題，避免閃一下：預設淺色；訪客按過切換鈕選了深色才用深色。
-      // 選擇存在 localStorage；手機封鎖網站資料時改記在分頁的 window.name（同一個分頁換頁仍有效）
+      // 選擇存在 localStorage 的 yeshun-theme（2026-10-12 改名：舊的 theme 是改成預設淺色以前選的，一律作廢）；手機封鎖網站資料時改記在分頁的 window.name（同一個分頁換頁仍有效）
       (function () {
         var t = 'light';
         if (darkModeEnabled) {
-          try { t = localStorage.getItem('theme'); } catch (e) { t = null; }
+          try { t = localStorage.getItem('yeshun-theme'); } catch (e) { t = null; }
           if (!t) { var m = /(?:^|;)yeshun-theme=(dark|light)/.exec(window.name); t = m && m[1]; }
           if (t !== 'dark') t = 'light';
         }
@@ -160,18 +160,18 @@ const isActive = (href: string) => path === u(href) || path.startsWith(u(href) +
       document.querySelector('[data-theme-btn]')?.addEventListener('click', () => {
         const next = root.dataset.theme === 'light' ? 'dark' : 'light';
         applyTheme(next);
-        try { localStorage.setItem('theme', next); } catch {}
+        try { localStorage.setItem('yeshun-theme', next); } catch {}
         window.name = `${window.name.replace(/(?:^|;)yeshun-theme=(dark|light)/, '')};yeshun-theme=${next}`;
       });
       // 按「上一頁」時瀏覽器會拿出暫存的舊畫面，顏色可能是換頁前的；回來時、或在別的分頁改過時，重新套用記住的選擇
       const savedTheme = () => {
         let t: string | null = null;
-        try { t = localStorage.getItem('theme'); } catch {}
+        try { t = localStorage.getItem('yeshun-theme'); } catch {}
         t ||= /(?:^|;)yeshun-theme=(dark|light)/.exec(window.name)?.[1] ?? null;
         return darkModeEnabled && t === 'dark' ? 'dark' : 'light';
       };
       window.addEventListener('pageshow', () => applyTheme(savedTheme()));
-      window.addEventListener('storage', (e) => { if (e.key === 'theme') applyTheme(savedTheme()); });
+      window.addEventListener('storage', (e) => { if (e.key === 'yeshun-theme') applyTheme(savedTheme()); });
 
       // Logo 文字：同一欄的中文和英文撐成一樣寬（平均加字距），兩行頭尾與「｜」對齊
       const fitBrand = () => {

@@ -10,7 +10,7 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
   for (const scheme of ['dark', 'light']) for (const [w, h, dev] of sizes) {
     // 系統設定故意跟網站相反：網站不跟隨系統。深色那一輪模擬「訪客按過切換鈕選了深色」
     const ctx = await b.newContext({ viewport: { width: w, height: h }, colorScheme: scheme === 'dark' ? 'light' : 'dark', reducedMotion: 'reduce' });
-    if (scheme === 'dark') await ctx.addInitScript(() => { try { localStorage.setItem('theme', 'dark'); } catch {} });
+    if (scheme === 'dark') await ctx.addInitScript(() => { try { localStorage.setItem('yeshun-theme', 'dark'); } catch {} });
     for (const path of pages) {
       const tag = `${name}/${dev}/${scheme}${path}`;
       const p = await ctx.newPage();

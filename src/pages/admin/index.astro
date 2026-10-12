@@ -20,7 +20,7 @@ import { darkModeEnabled } from '../../data/site';
       (function () {
         var t = 'light';
         if (darkModeEnabled) {
-          try { t = localStorage.getItem('theme'); } catch (e) {}
+          try { t = localStorage.getItem('yeshun-theme'); } catch (e) {}
           if (t !== 'dark') t = 'light';
         }
         document.documentElement.dataset.theme = t;
