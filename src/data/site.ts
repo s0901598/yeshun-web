@@ -1,6 +1,7 @@
 // 網站固定文案。公司資料與聯絡方式改在後台「公司資料」管理（src/lib/data.ts 的 getCompanies、getSettings）
-// 深色模式：業主希望以淺色為主，先關掉（全站固定淺色、不顯示切換鈕）。改成 true 就恢復切換
-export const darkModeEnabled = false;
+// 深色模式：業主希望以淺色為主——預設淺色（不跟隨系統），頁首保留切換鈕，訪客選過會記住。
+// 改成 false 會全站固定淺色、拿掉切換鈕
+export const darkModeEnabled = true;
 
 export const site = {
   slogan: '從設計到完工，每個細節都看得見',

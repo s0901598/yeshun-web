@@ -1,4 +1,4 @@
-// 完整驗證：Chromium + WebKit × 手機/平板/電腦 × 系統深/淺色（網站固定淺色）× 所有頁面，含互動狀態
+// 完整驗證：Chromium + WebKit × 手機/平板/電腦 × 淺色/深色（預設淺色，深色是訪客自己切換）× 所有頁面，含互動狀態
 import { chromium, webkit } from 'playwright';
 const B = process.argv[2] ?? 'http://localhost:4321/yeshun-web';
 const pages = ['/', '/about/', '/projects/', '/projects/luzhou-house/', '/details/', '/process/', '/contact/'];
@@ -8,7 +8,9 @@ const bad = (m) => problems.push(m);
 for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', () => webkit.launch()]]) {
   const b = await launch();
   for (const scheme of ['dark', 'light']) for (const [w, h, dev] of sizes) {
-    const ctx = await b.newContext({ viewport: { width: w, height: h }, colorScheme: scheme, reducedMotion: 'reduce' });
+    // 系統設定故意跟網站相反：網站不跟隨系統。深色那一輪模擬「訪客按過切換鈕選了深色」
+    const ctx = await b.newContext({ viewport: { width: w, height: h }, colorScheme: scheme === 'dark' ? 'light' : 'dark', reducedMotion: 'reduce' });
+    if (scheme === 'dark') await ctx.addInitScript(() => { try { localStorage.setItem('theme', 'dark'); } catch {} });
     for (const path of pages) {
       const tag = `${name}/${dev}/${scheme}${path}`;
       const p = await ctx.newPage();
@@ -25,9 +27,8 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
         return imgs.filter((i) => !i.naturalWidth).map((i) => i.src);
       });
       broken.forEach((x) => bad(`${tag}: broken image ${x}`));
-      // 深色模式先關閉：不管系統設定，一律淺色、沒有切換鈕
-      checks++; if (await p.evaluate(() => document.documentElement.dataset.theme) !== 'light') bad(`${tag}: not light theme`);
-      checks++; if (await p.locator('[data-theme-btn]').count()) bad(`${tag}: theme toggle still shown`);
+      checks++; if (await p.evaluate(() => document.documentElement.dataset.theme) !== scheme) bad(`${tag}: theme mismatch`);
+      checks++; if (!(await p.locator('[data-theme-btn]').isVisible())) bad(`${tag}: theme toggle missing`);
       // Logo 兩行：同一欄中文、英文的頭尾對齊（扣掉最後一個字後面的字距），且不能壓到右邊的按鈕
       const brand = await p.evaluate(() => {
         const ink = (el) => { const r = el.getBoundingClientRect(); return [r.left, r.right - (parseFloat(el.style.letterSpacing) || 0)]; };
@@ -35,7 +36,7 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
         const [e1, e2] = [...document.querySelectorAll('.brand__en')].map(ink);
         const aligned = [[z1, e1], [z2, e2]].every(([a, b]) => Math.abs(a[0] - b[0]) < 1.5 && Math.abs(a[1] - b[1]) < 1.5);
         const textRight = Math.max(z2[1], e2[1]);
-        const next = [...document.querySelectorAll('[data-menu-btn], [data-nav]')].filter((e) => getComputedStyle(e).position !== 'fixed' && getComputedStyle(e).display !== 'none')
+        const next = [...document.querySelectorAll('[data-menu-btn], [data-nav], [data-theme-btn]')].filter((e) => getComputedStyle(e).position !== 'fixed' && getComputedStyle(e).display !== 'none')
           .map((e) => e.getBoundingClientRect().left);
         return { aligned, clear: next.every((x) => x >= textRight + 4) };
       });
@@ -100,11 +101,24 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
     }
     await ctx.close();
   }
-  // 以前存過「深色」的訪客，也要顯示淺色；舊的公司分頁網址要轉到關於我們
+  // 主題：沒選過一律淺色（系統是深色也一樣）；切換後換頁要保持；按上一頁回去也要是新選的顏色
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, colorScheme: 'dark' });
-  const p = await ctx.newPage(); await p.goto(B + '/');
-  await p.evaluate(() => localStorage.setItem('theme', 'dark')); await p.goto(B + '/about/');
-  checks++; if (await p.evaluate(() => document.documentElement.dataset.theme) !== 'light') bad(`${name}: saved dark theme still applied`);
+  const p = await ctx.newPage();
+  const theme = () => p.evaluate(() => document.documentElement.dataset.theme);
+  await p.goto(B + '/', { waitUntil: 'load' });
+  checks++; if (await theme() !== 'light') bad(`${name}: default not light on dark system`);
+  await p.click('[data-theme-btn]');
+  checks++; if (await theme() !== 'dark') bad(`${name}: toggle did not switch to dark`);
+  await p.goto(B + '/about/', { waitUntil: 'load' });
+  checks++; if (await theme() !== 'dark') bad(`${name}: dark not kept after changing page`);
+  await p.goto(B + '/projects/', { waitUntil: 'load' });
+  await p.click('[data-theme-btn]');
+  await p.goBack({ waitUntil: 'load' }); await p.waitForTimeout(300);
+  checks++; if (await theme() !== 'light') bad(`${name}: back button shows old theme`);
+  await p.goForward({ waitUntil: 'load' }); await p.waitForTimeout(300);
+  checks++; if (await theme() !== 'light') bad(`${name}: forward button shows old theme`);
+  await p.reload({ waitUntil: 'load' });
+  checks++; if (await theme() !== 'light') bad(`${name}: light not kept after reload`);
   for (const old of ['/about/yeshun/', '/about/yaosan/']) {
     await p.goto(B + old); await p.waitForURL(/\/about\/$/, { timeout: 5000 }).catch(() => {});
     checks++; if (!new URL(p.url()).pathname.endsWith('/about/')) bad(`${name}: ${old} did not redirect (${p.url()})`);

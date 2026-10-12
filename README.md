@@ -37,7 +37,7 @@
 | `npm run dev` | 本機開發，網址 http://localhost:4321 |
 | `npm run build` | 打包到 `dist/` |
 | `npm run preview` | 預覽打包結果，網址 http://localhost:4321/yeshun-web/ |
-| `npm run verify` | 完整驗證（Chrome＋iPhone Safari 核心 × 手機/平板/電腦 × 系統深/淺色（網站固定淺色），含開選單、Logo 對齊、看大圖、篩選、舊網址轉址）。先執行 `npm run preview`；也可以加網址測線上版：`npm run verify -- https://s0901598.github.io/yeshun-web` |
+| `npm run verify` | 完整驗證（Chrome＋iPhone Safari 核心 × 手機/平板/電腦 × 淺色/深色（預設淺色），含開選單、Logo 對齊、主題切換與換頁／上一頁、看大圖、篩選、舊網址轉址）。先執行 `npm run preview`；也可以加網址測線上版：`npm run verify -- https://s0901598.github.io/yeshun-web` |
 | `npm run verify:admin` | 後台權限驗證（建立臨時編輯帳號測試權限，測完自動刪除）。需要本機 `.env` |
 | `npm run verify:flow` | 後台完整流程驗證（新增案例、階段、照片、儲存、預覽、發布、下架、刪除、公司資料），會自己建立並刪除測試資料，發布呼叫會被攔截不會更新官網。需要 `.env` |
 | `npm run deploy` | 手動觸發 GitHub Actions 重新部署官網 |
@@ -72,8 +72,8 @@
 - 官網讀資料的入口只有 `src/lib/data.ts`。
 
 ## 淺色／深色模式
-- **目前深色模式關閉**（業主希望以淺色為主）：全站固定淺色、不顯示切換鈕。要恢復時把 `src/data/site.ts` 的 `darkModeEnabled` 改成 `true`。
-- 開啟時：預設跟隨使用者的系統設定；頁首 ☀/☾ 按鈕可以手動切換，網站會記住選擇。
+- **預設淺色**（業主希望以淺色為主），不跟隨系統設定；頁首 ☀/☾ 按鈕可以切換深色，網站會記住選擇，按上一頁回去也會套用新選的顏色。
+- 要全站固定淺色、拿掉切換鈕：把 `src/data/site.ts` 的 `darkModeEnabled` 改成 `false`。
 - 每一頁最下方的結語＋「預約諮詢」按鈕在 `src/components/ContactCTA.astro`，文字來自後台（聯絡頁不放）。
 - 顏色都定義在 `src/styles/global.css` 開頭：`:root` 是深色，`:root[data-theme='light']` 是淺色。
 - 金色分兩種：`--gold` 用在線條和按鈕（兩種模式一樣），`--gold-text` 用在文字（淺色模式較深）。
