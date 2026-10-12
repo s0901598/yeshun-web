@@ -64,7 +64,7 @@ const settings = await getSettings();
             {c.services.length > 0 && (
               <ul class="service__list">{c.services.map((x) => <li>{x}</li>)}</ul>
             )}
-            <a href={u(`/about/${c.id}`)} class="btn btn--ghost service__more">認識{c.shortName} <span class="arrow">→</span></a>
+            <a href={u('/about')} class="btn btn--ghost service__more">認識{c.shortName} <span class="arrow">→</span></a>
           </li>
         ))}
       </ul>

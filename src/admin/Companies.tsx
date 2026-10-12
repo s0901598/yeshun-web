@@ -1,4 +1,4 @@
-// 公司資料：業順營造、耀三室內裝修各自的介紹與登記資料，以及共用的聯絡方式、首頁數據。
+// 公司資料：關於我們頁（介紹、特色、服務項目、全站結語）、業順營造與耀三室內裝修的登記資料，以及共用的聯絡方式、首頁數據。
 // 修改先暫存，按下方「全部儲存並上傳」才存進後台；按上方「發布到官網」才會更新官網。
 import { useEffect, useState } from 'preact/hooks';
 import { lines, must, photoUrl, refreshSiteStatus, removeFileIfUnused, setUnsaved, supabase, uploadImage } from './lib';
@@ -8,9 +8,12 @@ interface CompanyRow {
   id: 'yeshun' | 'yaosan'; name: string; short_name: string; english_name: string; field: string; intro: string;
   services: string[]; license_no: string; license_image_path: string | null; show_license_image: boolean; sort: number;
 }
+interface Feature { title: string; body: string }
 interface SettingsRow {
   phone: string; line_id: string; line_url: string; email: string; address: string; hours: string;
   stats: { label: string; value: number | string; suffix: string }[];
+  // 關於我們：服務項目在表單裡是一行一項的文字
+  about_intro: string; about_features: Feature[]; about_services: string; closing_quote: string; closing_text: string;
 }
 type CompanyForm = Omit<CompanyRow, 'services'> & { services: string; licenseFile?: File; licensePreview?: string };
 
@@ -26,7 +29,12 @@ export default function Companies() {
   const load = async () => {
     const cs = (must(await supabase.from('companies').select('*').order('sort')) as CompanyRow[]).map(toCompanyForm);
     const st = must(await supabase.from('site_settings').select('*').eq('id', 1).single()) as SettingsRow;
-    const s = { phone: st.phone, line_id: st.line_id, line_url: st.line_url, email: st.email, address: st.address, hours: st.hours, stats: st.stats ?? [] };
+    const raw = st as unknown as SettingsRow & { about_services: string[] };
+    const s: SettingsRow = {
+      phone: st.phone, line_id: st.line_id, line_url: st.line_url, email: st.email, address: st.address, hours: st.hours, stats: st.stats ?? [],
+      about_intro: raw.about_intro ?? '', about_features: raw.about_features ?? [], about_services: (raw.about_services ?? []).join('\n'),
+      closing_quote: raw.closing_quote ?? '', closing_text: raw.closing_text ?? '',
+    };
     setOrig({ companies: cs, settings: s });
     setCompanies(cs);
     setSettings(s);
@@ -42,7 +50,14 @@ export default function Companies() {
   if (!orig || !settings) return <p class="a-loading">載入中…</p>;
 
   const patchCompany = (id: string, patch: Partial<CompanyForm>) => setCompanies(companies.map((c) => (c.id === id ? { ...c, ...patch } : c)));
-  const setS = (k: keyof Omit<SettingsRow, 'stats'>) => (e: Event) => setSettings({ ...settings, [k]: (e.target as HTMLInputElement).value });
+  const setS = (k: keyof Omit<SettingsRow, 'stats' | 'about_features'>) => (e: Event) => setSettings({ ...settings, [k]: (e.target as HTMLInputElement).value });
+  const setFeatures = (about_features: Feature[]) => setSettings({ ...settings, about_features });
+  const setFeature = (i: number, k: keyof Feature, v: string) => setFeatures(settings.about_features.map((f, j) => (j === i ? { ...f, [k]: v } : f)));
+  const moveFeature = (i: number, d: number) => {
+    const list = [...settings.about_features]; const j = i + d;
+    if (j < 0 || j >= list.length) return;
+    [list[i], list[j]] = [list[j], list[i]]; setFeatures(list);
+  };
   const setStat = (i: number, k: 'label' | 'value' | 'suffix', v: string) =>
     setSettings({ ...settings, stats: settings.stats.map((x, j) => (j === i ? { ...x, [k]: v } : x)) });
 
@@ -73,6 +88,10 @@ export default function Companies() {
           phone: settings.phone.trim(), line_id: settings.line_id.trim(), line_url: settings.line_url.trim(),
           email: settings.email.trim(), address: settings.address.trim(), hours: settings.hours.trim(),
           stats: settings.stats.filter((x) => x.label.trim()).map((x) => ({ label: x.label.trim(), value: Number(x.value), suffix: x.suffix.trim() })),
+          about_intro: lines(settings.about_intro).join('\n'),
+          about_features: settings.about_features.map((f) => ({ title: f.title.trim(), body: f.body.trim() })).filter((f) => f.title || f.body),
+          about_services: lines(settings.about_services),
+          closing_quote: settings.closing_quote.trim().replace(/^「|」$/g, ''), closing_text: settings.closing_text.trim(),
         }).eq('id', 1));
       }
       await load();
@@ -89,6 +108,37 @@ export default function Companies() {
     <section class="a-editor">
       <div class="a-page-head"><h2>公司資料</h2></div>
       <p class="a-hint">沒有填的欄位，官網上就不會顯示。修改後按最下方「全部儲存並上傳」，再按上方「發布到官網」更新官網。</p>
+
+      <div class="a-card">
+        <h3>關於我們頁{settingsDirty && <span class="a-dot">未儲存</span>}</h3>
+        <Field label="介紹" hint="一行就是一段"><textarea rows={8} value={settings.about_intro} onInput={setS('about_intro')} /></Field>
+
+        <h4 class="a-subhead">特色（每一項是一格）</h4>
+        <ul class="a-features">
+          {settings.about_features.map((f, i) => (
+            <li>
+              <div class="a-features__head">
+                <span class="a-features__no">{String(i + 1).padStart(2, '0')}</span>
+                <input aria-label={`第 ${i + 1} 格標題`} placeholder="標題，例：精湛工藝，嚴格把關" value={f.title} onInput={(e) => setFeature(i, 'title', (e.target as HTMLInputElement).value)} />
+              </div>
+              <textarea aria-label={`第 ${i + 1} 格內文`} rows={3} placeholder="內文" value={f.body} onInput={(e) => setFeature(i, 'body', (e.target as HTMLTextAreaElement).value)} />
+              <div class="a-features__btns">
+                <button type="button" class="a-text-btn" disabled={i === 0} onClick={() => moveFeature(i, -1)}>↑ 上移</button>
+                <button type="button" class="a-text-btn" disabled={i === settings.about_features.length - 1} onClick={() => moveFeature(i, 1)}>↓ 下移</button>
+                <button type="button" class="a-text-btn a-text-btn--danger" onClick={() => setFeatures(settings.about_features.filter((_, j) => j !== i))}>刪除</button>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <button type="button" class="a-btn a-btn--ghost a-btn--small" onClick={() => setFeatures([...settings.about_features, { title: '', body: '' }])}>＋ 新增一格</button>
+
+        <h4 class="a-subhead">服務項目</h4>
+        <Field label="服務項目" hint="一行寫一項。括號裡的文字會變成小字說明，例：廠房與公共工程（工業廠房、公共基礎建設）"><textarea rows={6} value={settings.about_services} onInput={setS('about_services')} /></Field>
+
+        <h4 class="a-subhead">結語（每一頁最下方，和「預約諮詢」按鈕一起顯示）</h4>
+        <Field label="引言" hint="不用加「」，官網會自動加上"><input value={settings.closing_quote} onInput={setS('closing_quote')} /></Field>
+        <Field label="結語"><textarea rows={2} value={settings.closing_text} onInput={setS('closing_text')} /></Field>
+      </div>
 
       {companies.map((c) => {
         const dirty = dirtyCompanies.includes(c);
@@ -129,7 +179,7 @@ export default function Companies() {
       })}
 
       <div class="a-card">
-        <h3>聯絡資料（兩家公司共用）{settingsDirty && <span class="a-dot">未儲存</span>}</h3>
+        <h3>聯絡資料（兩家公司共用）</h3>
         <div class="a-grid">
           <Field label="電話" hint="例：02-2281-0000"><input type="tel" value={settings.phone} onInput={setS('phone')} /></Field>
           <Field label="Email"><input type="email" value={settings.email} onInput={setS('email')} /></Field>

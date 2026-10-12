@@ -1,7 +1,7 @@
-// 完整驗證：Chromium + WebKit × 手機/平板/電腦 × 深/淺色 × 所有頁面，含互動狀態
+// 完整驗證：Chromium + WebKit × 手機/平板/電腦 × 系統深/淺色（網站固定淺色）× 所有頁面，含互動狀態
 import { chromium, webkit } from 'playwright';
 const B = process.argv[2] ?? 'http://localhost:4321/yeshun-web';
-const pages = ['/', '/about/', '/about/yeshun/', '/about/yaosan/', '/projects/', '/projects/luzhou-house/', '/details/', '/process/', '/contact/'];
+const pages = ['/', '/about/', '/projects/', '/projects/luzhou-house/', '/details/', '/process/', '/contact/'];
 const sizes = [[390, 844, 'phone'], [820, 1180, 'tablet'], [1440, 900, 'desktop']];
 const problems = []; let checks = 0;
 const bad = (m) => problems.push(m);
@@ -25,7 +25,26 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
         return imgs.filter((i) => !i.naturalWidth).map((i) => i.src);
       });
       broken.forEach((x) => bad(`${tag}: broken image ${x}`));
-      if (await p.evaluate(() => document.documentElement.dataset.theme) !== scheme) bad(`${tag}: theme mismatch`);
+      // 深色模式先關閉：不管系統設定，一律淺色、沒有切換鈕
+      checks++; if (await p.evaluate(() => document.documentElement.dataset.theme) !== 'light') bad(`${tag}: not light theme`);
+      checks++; if (await p.locator('[data-theme-btn]').count()) bad(`${tag}: theme toggle still shown`);
+      // Logo 兩行：同一欄中文、英文的頭尾對齊（扣掉最後一個字後面的字距），且不能壓到右邊的按鈕
+      const brand = await p.evaluate(() => {
+        const ink = (el) => { const r = el.getBoundingClientRect(); return [r.left, r.right - (parseFloat(el.style.letterSpacing) || 0)]; };
+        const [z1, z2] = [...document.querySelectorAll('.brand__zh')].map(ink);
+        const [e1, e2] = [...document.querySelectorAll('.brand__en')].map(ink);
+        const aligned = [[z1, e1], [z2, e2]].every(([a, b]) => Math.abs(a[0] - b[0]) < 1.5 && Math.abs(a[1] - b[1]) < 1.5);
+        const textRight = Math.max(z2[1], e2[1]);
+        const next = [...document.querySelectorAll('[data-menu-btn], [data-nav]')].filter((e) => getComputedStyle(e).position !== 'fixed' && getComputedStyle(e).display !== 'none')
+          .map((e) => e.getBoundingClientRect().left);
+        return { aligned, clear: next.every((x) => x >= textRight + 4) };
+      });
+      checks++; if (!brand.aligned) bad(`${tag}: logo lines not aligned`);
+      checks++; if (!brand.clear) bad(`${tag}: logo text runs into menu`);
+      // 頁尾前：結語＋預約諮詢（聯絡頁除外），舊的「有裝修或營造的需求？」不能再出現
+      const cta = await p.evaluate(() => ({ old: document.body.innerText.includes('有裝修或營造的需求'), quote: !!document.querySelector('.cta__quote'), btn: !!document.querySelector('.cta__btn') }));
+      checks++; if (cta.old) bad(`${tag}: old CTA text still shown`);
+      if (path !== '/contact/') { checks++; if (!cta.quote || !cta.btn) bad(`${tag}: closing block missing ${JSON.stringify(cta)}`); }
       // 互動：手機/平板打開選單，選單要完整、最後一個按鈕要看得到
       if (dev !== 'desktop' && path === '/') {
         for (const y of [0, 1200]) {
@@ -41,27 +60,28 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
           await p.click('[data-menu-btn]'); await p.waitForTimeout(300);
         }
       }
-      // 互動：「關於我們」子選單——手機在選單裡展開、電腦是下拉選單，兩個子項目都要看得到、點得到
+      // 選單：「關於我們」直接連到單一頁，不再有下拉選單
       if (path === '/') {
-        // 還沒打開前，子選單必須是收起來的（看不到）
-        const closed = await p.evaluate(() => getComputedStyle(document.querySelector('.nav__sub')).display === 'none');
-        checks++; if (!closed) bad(`${tag}: 關於我們 submenu visible before opening`);
-        if (dev !== 'desktop') {
-          await p.click('[data-menu-btn]'); await p.waitForTimeout(350);
-          await p.click('[data-sub-toggle]'); await p.waitForTimeout(250);
-        } else {
-          await p.hover('[data-sub-toggle]'); await p.waitForTimeout(250);
-        }
-        const subs = await p.evaluate(() => [...document.querySelectorAll('.nav__sublink')].map((a) => {
-          const r = a.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.bottom <= innerHeight && r.top >= 0;
-        }));
-        checks++; if (subs.length !== 2 || !subs.every(Boolean)) bad(`${tag}: 關於我們 submenu not fully visible ${JSON.stringify(subs)}`);
-        // 子項目要上下排列，不能擠成同一排（文字被折成兩行）
-        const stacked = await p.evaluate(() => { const r = [...document.querySelectorAll('.nav__sublink')].map((a) => a.getBoundingClientRect()); return r[1].top >= r[0].bottom - 1 && r.every((x) => x.height < 60); });
-        checks++; if (!stacked) bad(`${tag}: 關於我們 submenu items not stacked one per line`);
-        await p.locator('.nav__sublink', { hasText: '耀三' }).click(); await p.waitForLoadState('networkidle');
-        checks++; if (!p.url().includes('/about/yaosan')) bad(`${tag}: submenu link did not open 耀三 page (${p.url()})`);
+        checks++; if (await p.locator('.nav__sub, [data-sub-toggle]').count()) bad(`${tag}: about submenu still exists`);
+        if (dev !== 'desktop') { await p.click('[data-menu-btn]'); await p.waitForTimeout(350); }
+        await p.locator('.nav__link', { hasText: '關於我們' }).click(); await p.waitForLoadState('networkidle');
+        checks++; if (!/\/about\/?$/.test(new URL(p.url()).pathname)) bad(`${tag}: 關於我們 link opened ${p.url()}`);
         await p.goto(B + path, { waitUntil: 'networkidle' });
+      }
+      // 關於我們頁：五格、服務項目、兩家公司左右（手機上下）、字不能太小
+      if (path === '/about/') {
+        const a = await p.evaluate(() => {
+          const f = [...document.querySelectorAll('.feature')];
+          const fs = (sel) => Math.min(...[...document.querySelectorAll(sel)].map((e) => parseFloat(getComputedStyle(e).fontSize)));
+          const c = [...document.querySelectorAll('.company')].map((e) => e.getBoundingClientRect());
+          return { features: f.length, bodyFont: fs('.feature__body'), titleFont: fs('.feature__title'), services: document.querySelectorAll('.services li').length,
+            companies: c.length, sideBySide: c.length === 2 && Math.abs(c[0].top - c[1].top) < 2 && c[1].left > c[0].right,
+            noPhoto: !document.querySelector('.photo, .license'), field: document.querySelector('.hero-field') === null };
+        });
+        checks++; if (a.features !== 5 || a.services !== 5 || a.companies !== 2) bad(`${tag}: about content count ${JSON.stringify(a)}`);
+        checks++; if (a.bodyFont < 18 || a.titleFont < 22) bad(`${tag}: about feature text too small ${JSON.stringify(a)}`);
+        checks++; if (a.sideBySide !== (dev !== 'phone')) bad(`${tag}: company columns layout ${JSON.stringify(a)}`);
+        checks++; if (!a.noPhoto || !a.field) bad(`${tag}: about page has photo or 營造工程 subtitle`);
       }
       // 互動：案例頁看大圖
       if (path.startsWith('/projects/luzhou')) {
@@ -80,11 +100,15 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
     }
     await ctx.close();
   }
-  // 互動：主題切換按鈕與記憶
+  // 以前存過「深色」的訪客，也要顯示淺色；舊的公司分頁網址要轉到關於我們
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, colorScheme: 'dark' });
   const p = await ctx.newPage(); await p.goto(B + '/');
-  await p.click('[data-theme-btn]'); await p.goto(B + '/about/');
-  checks++; if (await p.evaluate(() => document.documentElement.dataset.theme) !== 'light') bad(`${name}: theme toggle not remembered`);
+  await p.evaluate(() => localStorage.setItem('theme', 'dark')); await p.goto(B + '/about/');
+  checks++; if (await p.evaluate(() => document.documentElement.dataset.theme) !== 'light') bad(`${name}: saved dark theme still applied`);
+  for (const old of ['/about/yeshun/', '/about/yaosan/']) {
+    await p.goto(B + old); await p.waitForURL(/\/about\/$/, { timeout: 5000 }).catch(() => {});
+    checks++; if (!new URL(p.url()).pathname.endsWith('/about/')) bad(`${name}: ${old} did not redirect (${p.url()})`);
+  }
   await ctx.close();
   await b.close();
 }

@@ -1,37 +1,108 @@
 ---
-// 關於我們總覽：兩家公司的入口
+// 關於我們：單一頁。介紹、五格特色、服務項目、結語都在後台「公司資料 → 關於我們」修改
 import { u } from '../../lib/url';
 import Base from '../../layouts/Base.astro';
 import ContactCTA from '../../components/ContactCTA.astro';
-import { getCompanies } from '../../lib/data';
+import ProjectCard from '../../components/ProjectCard.astro';
+import { getCompanies, getProjects, getSettings } from '../../lib/data';
 
 const { yeshun, yaosan } = await getCompanies();
+const settings = await getSettings();
+const all = await getProjects();
+const cases = all.slice(0, 6);
+// 「廠房與公共工程（工業廠房、公共基礎建設）」→ 主標＋括號裡的說明
+const services = settings.aboutServices.map((s) => {
+  const m = s.match(/^(.+?)[（(](.+)[）)]$/);
+  return m ? { main: m[1], note: m[2] } : { main: s, note: '' };
+});
 ---
-<Base title="關於我們" description={`${yeshun.shortName}負責營造工程，${yaosan.shortName}負責室內裝修。`}>
+<Base title="關於我們" description={settings.aboutIntro[0] ?? `${yeshun.shortName}｜${yaosan.shortName}`}>
   <section class="page-hero">
-    <div class="page-hero__bg" aria-hidden="true"><img src={u('/images/detail-plan.webp')} alt="" /></div>
+    <div class="page-hero__bg" aria-hidden="true"><img src={u('/images/hero-site.webp')} alt="" /></div>
     <div class="container">
       <p class="eyebrow">ABOUT</p>
       <h1 class="h-display">關於我們</h1>
-      <p class="lead">營造工程由{yeshun.shortName}負責，室內裝修由{yaosan.shortName}承作，從結構到空間一次到位。</p>
+      <div class="intro">
+        {settings.aboutIntro.map((p) => <p>{p}</p>)}
+      </div>
     </div>
   </section>
 
-  <section class="section">
+  {settings.aboutFeatures.length > 0 && (
+    <section class="section">
+      <div class="container">
+        <ul class="features">
+          {settings.aboutFeatures.map((f, i) => (
+            <li class="feature reveal">
+              <p class="feature__no mono">{String(i + 1).padStart(2, '0')}</p>
+              {f.title && <h2 class="feature__title">{f.title}</h2>}
+              {f.body && <p class="feature__body">{f.body}</p>}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )}
+
+  {services.length > 0 && (
+    <section class="section section--alt">
+      <div class="container split">
+        <div class="reveal">
+          <p class="eyebrow">SERVICES</p>
+          <h2 class="h-section">服務項目</h2>
+        </div>
+        <ol class="services reveal">
+          {services.map((s, i) => (
+            <li>
+              <span class="services__no mono">{String(i + 1).padStart(2, '0')}</span>
+              <span>
+                <span class="services__main">{s.main}</span>
+                {s.note && <span class="services__note">{s.note}</span>}
+              </span>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  )}
+
+  {cases.length > 0 && (
+    <section class="section">
+      <div class="container">
+        <div class="section-head section-head--split reveal">
+          <div>
+            <p class="eyebrow">PROJECTS</p>
+            <h2 class="h-section">案例作品</h2>
+          </div>
+          <a href={u('/projects')} class="btn btn--ghost">看全部案例 <span class="arrow">→</span></a>
+        </div>
+        <ul class="cases">
+          {cases.map((pj, i) => <li class="reveal"><ProjectCard project={pj} index={i} /></li>)}
+        </ul>
+      </div>
+    </section>
+  )}
+
+  <section class="section section--alt">
     <div class="container">
-      <ul class="companies">
+      <div class="section-head reveal">
+        <p class="eyebrow">COMPANY</p>
+        <h2 class="h-section">公司資料</h2>
+      </div>
+      <div class="companies">
         {[yeshun, yaosan].map((c) => (
-          <li class="reveal">
-            <a href={u(`/about/${c.id}`)} class="company corners">
-              <span class="company__en mono">{c.englishName}</span>
-              <span class="company__field">{c.field}</span>
-              <span class="company__name">{c.shortName}</span>
-              {c.intro && <span class="company__intro">{c.intro}</span>}
-              <span class="company__more">了解更多 <span class="mono">→</span></span>
-            </a>
-          </li>
+          <div class="company reveal">
+            <p class="company__en mono">{c.englishName}</p>
+            <h3 class="company__name">{c.name}</h3>
+            <dl class="profile">
+              {c.field && <div><dt class="mono">FIELD</dt><dd>{c.field}</dd></div>}
+              {c.licenseNo && <div><dt class="mono">LICENSE</dt><dd>{c.licenseNo}</dd></div>}
+              {settings.address && <div><dt class="mono">ADDRESS</dt><dd>{settings.address}</dd></div>}
+              {settings.email && <div><dt class="mono">EMAIL</dt><dd><a href={settings.emailHref}>{settings.email}</a></dd></div>}
+            </dl>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   </section>
 
@@ -39,17 +110,42 @@ const { yeshun, yaosan } = await getCompanies();
 </Base>
 
 <style>
-  .companies { display: grid; gap: 20px; }
-  @media (min-width: 768px) { .companies { grid-template-columns: 1fr 1fr; gap: 24px; } }
-  .company {
-    display: flex; flex-direction: column; height: 100%;
-    border: 1px solid var(--line); background: var(--surface); padding: 32px 26px;
-    transition: border-color .25s, transform .25s;
+  .intro { max-width: 820px; margin-top: 28px; display: grid; gap: 18px; }
+  .intro p { color: var(--text-2); font-size: clamp(18px, 1.9vw, 21px); line-height: 1.9; }
+
+  .features { display: grid; gap: 16px; }
+  .feature { border: 1px solid var(--line); background: rgba(var(--surface-rgb), .7); padding: 28px 24px; }
+  .feature__no { font-size: 14px; color: var(--gold-text); }
+  .feature__title { font-size: clamp(22px, 2.4vw, 26px); margin: 10px 0 12px; line-height: 1.4; }
+  .feature__body { color: var(--text-2); font-size: 18px; line-height: 1.85; }
+  @media (min-width: 768px) { .features { grid-template-columns: repeat(2, 1fr); gap: 24px; } }
+  @media (min-width: 1200px) {
+    /* 一排 3 格，第二排 2 格置中 */
+    .features { grid-template-columns: repeat(6, 1fr); }
+    .feature { grid-column: span 2; }
+    .feature:nth-child(4):nth-last-child(2) { grid-column: 2 / span 2; }
   }
-  .company:hover { border-color: var(--line-strong); transform: translateY(-4px); }
-  .company__en { font-size: 13px; color: var(--gold-text); }
-  .company__field { color: var(--gold-text); margin-top: 14px; font-size: 17px; }
-  .company__name { font-size: clamp(28px, 4vw, 36px); font-weight: 700; }
-  .company__intro { color: var(--text-2); margin-top: 14px; }
-  .company__more { margin-top: auto; padding-top: 24px; color: var(--gold-text); font-weight: 500; }
+
+  .split { display: grid; gap: 32px; align-items: start; }
+  @media (min-width: 1200px) { .split { grid-template-columns: 1fr 1.6fr; gap: 80px; } }
+  .services { border-top: 1px solid var(--line); }
+  .services li { display: flex; gap: 20px; align-items: baseline; padding: 18px 0; border-bottom: 1px solid var(--line); }
+  .services__no { font-size: 14px; color: var(--gold-text); flex: none; }
+  .services__main { display: block; font-size: 20px; font-weight: 500; }
+  .services__note { display: block; margin-top: 4px; font-size: 16px; color: var(--text-2); }
+
+  .cases { display: grid; gap: 20px; }
+  @media (min-width: 768px) { .cases { grid-template-columns: repeat(2, 1fr); gap: 24px; } }
+  @media (min-width: 1200px) { .cases { grid-template-columns: repeat(3, 1fr); } }
+
+  .companies { display: grid; gap: 40px; }
+  @media (min-width: 768px) { .companies { grid-template-columns: 1fr 1fr; gap: 48px; } }
+  .company__en { font-size: 13px; color: var(--gold-text); letter-spacing: .1em; }
+  .company__name { font-size: clamp(24px, 3vw, 32px); margin-top: 8px; }
+  .profile { margin-top: 20px; border-top: 1px solid var(--line); }
+  .profile div { display: grid; grid-template-columns: 1fr; gap: 4px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .profile dt { font-size: 12px; color: var(--gold-text); }
+  .profile dd { color: var(--text-2); overflow-wrap: anywhere; }
+  .profile a:hover { color: var(--gold-text); }
+  @media (min-width: 1200px) { .profile div { grid-template-columns: 120px 1fr; gap: 16px; } }
 </style>

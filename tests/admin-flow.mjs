@@ -224,6 +224,28 @@ const { data: co2 } = await svc.from('companies').select('*').eq('id', 'yaosan')
 check(co2.license_no === origCo.license_no && co2.license_image_path === origCo.license_image_path, 'company info restored; 移除照片 works');
 check(!(await svc.storage.from('photos').list('companies')).data?.some((f) => f.name === co.license_image_path.split('/').pop()), 'removed certificate file deleted from storage');
 
+// ---------- 10b. 關於我們頁：改特色、新增一格、服務項目、結語（測完用原本的資料還原） ----------
+const aboutCols = 'about_intro, about_features, about_services, closing_quote, closing_text';
+const { data: origAbout } = await svc.from('site_settings').select(aboutCols).eq('id', 1).single();
+const aboutCard = p.locator('.a-card', { hasText: '關於我們頁' });
+await aboutCard.getByLabel('第 1 格標題').fill('E2E 特色標題');
+await aboutCard.getByRole('button', { name: '＋ 新增一格' }).click();
+const newNo = origAbout.about_features.length + 1;
+await aboutCard.getByLabel(`第 ${newNo} 格標題`).fill('E2E 新增格');
+await aboutCard.getByLabel(`第 ${newNo} 格內文`).fill('E2E 內文');
+await aboutCard.getByRole('button', { name: '↑ 上移' }).last().click();
+await aboutCard.getByLabel('引言').fill('「E2E 引言」');
+await p.getByRole('button', { name: '全部儲存並上傳' }).click();
+check(await toastHas(p, '已全部儲存'), 'about page content saved');
+const { data: ab } = await svc.from('site_settings').select(aboutCols).eq('id', 1).single();
+check(ab.about_features.length === newNo && ab.about_features[0].title === 'E2E 特色標題' && ab.about_features[newNo - 2].title === 'E2E 新增格',
+  'feature edited, added and moved up');
+check(ab.closing_quote === 'E2E 引言', 'quote saved without 「」');
+check(JSON.stringify(ab.about_services) === JSON.stringify(origAbout.about_services), 'unchanged services kept as list');
+await svc.from('site_settings').update(origAbout).eq('id', 1);
+const { data: ab2 } = await svc.from('site_settings').select(aboutCols).eq('id', 1).single();
+check(JSON.stringify(ab2) === JSON.stringify(origAbout), 'about page content restored');
+
 const errs = p.errors;
 await browser.close();
 

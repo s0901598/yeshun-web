@@ -226,3 +226,12 @@ body { font-size: 17px; }
 .a-stats { display: grid; gap: 8px; margin-bottom: 12px; }
 .a-stats li { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 6px; align-items: center; }
 .a-stats input { min-height: 44px; padding: 8px 10px; font: inherit; font-size: 15px; background: var(--bg); color: var(--text); border: 1px solid var(--line); width: 100%; min-width: 0; }
+
+/* 關於我們：特色格子 */
+.a-features { display: grid; gap: 12px; margin-bottom: 12px; }
+.a-features li { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); background: var(--bg); }
+.a-features__head { display: flex; gap: 10px; align-items: center; }
+.a-features__no { font-family: var(--mono, monospace); color: var(--gold-text); font-size: 14px; flex: none; }
+.a-features input, .a-features textarea { width: 100%; min-width: 0; padding: 8px 10px; font: inherit; font-size: 16px; background: var(--surface); color: var(--text); border: 1px solid var(--line); }
+.a-features input { min-height: 44px; font-weight: 700; }
+.a-features__btns { display: flex; gap: 16px; justify-content: flex-end; flex-wrap: wrap; }

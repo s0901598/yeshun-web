@@ -120,10 +120,16 @@ export function getCompanies(): Promise<Record<CompanyId, Company>> {
   return companiesCache;
 }
 
+// 多行文字拆成段落，空行略過
+const lines = (t: string | null) => (t ?? '').split('\n').map((x) => x.trim()).filter(Boolean);
+
 // ---------- 共用聯絡資料：空白的欄位不顯示 ----------
 export interface Settings {
   phone: string; phoneHref: string; lineId: string; lineHref: string; email: string; emailHref: string;
   address: string; hours: string; mapEmbed: string; stats: { label: string; value: number; suffix: string }[];
+  // 關於我們頁與全站結語
+  aboutIntro: string[]; aboutFeatures: { title: string; body: string }[]; aboutServices: string[];
+  closingQuote: string; closingText: string;
 }
 
 let settingsCache: Promise<Settings> | undefined;
@@ -140,6 +146,11 @@ export function getSettings(): Promise<Settings> {
       mapEmbed: address ? `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed&hl=zh-TW` : '',
       stats: (r.stats ?? []).filter((x: any) => x?.label && Number.isFinite(Number(x.value)))
         .map((x: any) => ({ label: String(x.label), value: Number(x.value), suffix: String(x.suffix ?? '') })),
+      aboutIntro: lines(r.about_intro),
+      aboutFeatures: (r.about_features ?? []).filter((x: any) => x?.title?.trim() || x?.body?.trim())
+        .map((x: any) => ({ title: String(x.title ?? '').trim(), body: String(x.body ?? '').trim() })),
+      aboutServices: (r.about_services ?? []).map((x: any) => String(x).trim()).filter(Boolean),
+      closingQuote: r.closing_quote.trim(), closingText: r.closing_text.trim(),
     };
   })();
   return settingsCache;

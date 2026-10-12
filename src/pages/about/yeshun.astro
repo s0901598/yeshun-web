@@ -1,0 +1,16 @@
+---
+// 舊網址：關於我們已合併成一頁，自動轉過去
+import { u } from '../../lib/url';
+const to = u('/about/');
+---
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex" />
+    <meta http-equiv="refresh" content={`0;url=${to}`} />
+    <link rel="canonical" href={to} />
+    <title>關於我們</title>
+  </head>
+  <body><a href={to}>前往關於我們</a></body>
+</html>

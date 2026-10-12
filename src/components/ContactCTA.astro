@@ -1,28 +1,27 @@
 ---
+// 全站頁尾前的結語＋預約諮詢按鈕。結語在後台「公司資料 → 關於我們」修改
 import { u } from '../lib/url';
 import { getSettings } from '../lib/data';
 
-const settings = await getSettings();
+const { closingQuote, closingText } = await getSettings();
 ---
 <section class="cta section">
   <div class="container cta__inner reveal">
-    <p class="eyebrow">CONTACT</p>
-    <h2 class="h-section">有裝修或營造的需求？<br />先聊聊，再決定。</h2>
-    <p class="lead">告訴我們空間現況、預算與時程，我們會安排丈量與初步建議，諮詢不收費。</p>
-    <div class="cta__actions">
-      <a href={u('/contact')} class="btn btn--primary">預約諮詢 <span class="arrow">→</span></a>
-      {settings.phone && <a href={settings.phoneHref} class="btn btn--ghost">撥打 {settings.phone}</a>}
-    </div>
+    <p class="eyebrow">OUR PROMISE</p>
+    {closingQuote && <blockquote class="cta__quote">「{closingQuote}」</blockquote>}
+    {closingText && <p class="cta__text">{closingText}</p>}
+    <a href={u('/contact')} class="btn btn--primary cta__btn">預約諮詢 <span class="arrow">→</span></a>
   </div>
 </section>
 
 <style>
   .cta { border-top: 1px solid var(--line); background-color: var(--bg-2); text-align: center; }
   .cta__inner { display: flex; flex-direction: column; align-items: center; }
-  .cta .lead { margin-left: auto; margin-right: auto; }
-  .cta__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 32px; }
-  @media (max-width: 767px) {
-    .cta__actions { flex-direction: column; width: 100%; }
-    .cta__actions .btn { width: 100%; }
+  .cta__quote {
+    max-width: 22em; margin: 8px auto 0;
+    font-size: clamp(24px, 3.4vw, 38px); font-weight: 700; line-height: 1.5; color: var(--text);
   }
+  .cta__text { max-width: 36em; margin: 20px auto 0; font-size: clamp(18px, 1.8vw, 20px); color: var(--text-2); }
+  .cta__btn { margin-top: 36px; }
+  @media (max-width: 767px) { .cta__btn { width: 100%; } }
 </style>
