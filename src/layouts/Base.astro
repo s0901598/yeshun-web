@@ -3,13 +3,14 @@ import { u } from '../lib/url';
 import '../styles/global.css';
 import { darkModeEnabled, siteNav } from '../data/site';
 import { getCompanies, getSettings } from '../lib/data';
+import { plainText } from '../lib/rich';
 
 interface Props { title?: string; description?: string; noindex?: boolean }
 const companies = await getCompanies();
 const settings = await getSettings();
 const { yeshun, yaosan } = companies;
 const nav = siteNav(settings.aboutTitle);
-const { title, description = yeshun.intro, noindex = false } = Astro.props;
+const { title, description = plainText(yeshun.intro), noindex = false } = Astro.props;
 const pageTitle = title ? `${title}｜${yeshun.name}` : `${yeshun.name}｜營造工程・室內裝修`;
 const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 const isActive = (href: string) => path === u(href) || path.startsWith(u(href) + '/');

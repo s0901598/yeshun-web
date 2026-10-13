@@ -6,6 +6,7 @@ import ProcessSteps from '../components/ProcessSteps.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import { detailsEnabled, site } from '../data/site';
 import { getFeaturedProjects, getDetails, getCompanies, getSettings } from '../lib/data';
+import { richHtml } from '../lib/rich';
 
 const featured = await getFeaturedProjects(4);
 const details = await getDetails();
@@ -69,9 +70,9 @@ const heroSlides = settings.heroImages.length
             <p class="service__field mono">{c.id === 'yeshun' ? 'CONSTRUCTION' : 'INTERIOR'}</p>
             <h3 class="service__title">{c.field}</h3>
             <p class="service__company">{c.shortName}</p>
-            <p class="service__intro">{c.intro}</p>
+            <p class="service__intro" set:html={richHtml(c.intro)} />
             {c.services.length > 0 && (
-              <ul class="service__list">{c.services.map((x) => <li>{x}</li>)}</ul>
+              <ul class="service__list">{c.services.map((x) => <li set:html={richHtml(x)} />)}</ul>
             )}
             <a href={u('/about')} class="btn btn--ghost service__more">認識{c.shortName} <span class="arrow">→</span></a>
           </li>
@@ -114,7 +115,7 @@ const heroSlides = settings.heroImages.length
           <li class="detail corners reveal">
             <p class="detail__code mono">{d.code}</p>
             <h3 class="detail__title">{d.title}</h3>
-            <p class="detail__text">{d.summary}</p>
+            <p class="detail__text" set:html={richHtml(d.summary)} />
           </li>
         ))}
       </ul>

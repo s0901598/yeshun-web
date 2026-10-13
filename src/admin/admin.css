@@ -245,3 +245,40 @@ body { font-size: 17px; }
 .a-hero__btns { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 0 10px 6px; }
 
 .a-notice { padding: 12px 14px; margin-bottom: 12px; border-left: 3px solid var(--amber); background: rgba(215, 148, 45, .1); color: var(--text); font-size: 15px; }
+
+/* 可上色、加粗的文字欄位 */
+.a-rich { display: grid; gap: 6px; position: relative; }
+.a-rich__bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.a-rich__btn { min-height: 36px; padding: 0 12px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font-size: 14px; display: inline-flex; align-items: center; gap: 6px; }
+.a-rich__btn:hover { border-color: var(--line-strong); }
+.a-rich__a { font-weight: 700; border-bottom: 3px solid; line-height: 1.1; }
+.a-rich__hint { font-size: 13px; color: var(--amber-text); }
+.a-rich__area {
+  min-height: 44px; padding: 10px 12px; font-size: 16px; line-height: 1.7; background: var(--bg); color: var(--text);
+  border: 1px solid var(--line); outline: none; white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.a-rich__area:focus { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(195, 162, 127, .25); }
+.a-rich__area:empty::before { content: attr(data-placeholder); color: var(--text-3); }
+.a-rich__palette {
+  position: absolute; top: 40px; left: 0; z-index: 20; width: min(320px, 100%);
+  display: grid; gap: 10px; padding: 12px; background: var(--surface); border: 1px solid var(--line-strong); box-shadow: 0 10px 30px rgba(0, 0, 0, .18);
+}
+.a-rich__swatches { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+.a-rich__swatch { aspect-ratio: 1; min-height: 30px; border: 1px solid rgba(0, 0, 0, .15); }
+.a-rich__swatch:hover { outline: 2px solid var(--gold); outline-offset: 1px; }
+.a-rich__custom { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.a-rich__picker input { width: 44px; height: 40px; padding: 0; border: 1px solid var(--line); background: none; cursor: pointer; }
+.a-rich__hex { width: 110px; min-height: 40px; padding: 6px 10px; font: inherit; font-family: var(--font-mono); background: var(--bg); color: var(--text); border: 1px solid var(--line); }
+.a-rich__preview { display: grid; gap: 6px; }
+.a-rich__plabel { font-size: 12px; color: var(--text-3); }
+.a-rich__pbox { padding: 8px 12px; font-size: 15px; line-height: 1.7; border: 1px solid var(--line); }
+.a-rich__pbox--light { background: #ffffff; color: #45413c; }
+.a-rich__pbox--dark { background: #1a1a1a; color: #d2cdc5; }
+.a-rich__warn { font-size: 13px; color: var(--amber-text); }
+.a-rich--compact .a-rich__area { min-height: 38px; padding: 6px 10px; font-size: 14px; }
+.a-rich--compact .a-rich__btn { min-height: 30px; padding: 0 8px; font-size: 13px; }
+.a-features__name { font-size: 14px; color: var(--text-3); }
+.a-rich__custom { flex-wrap: nowrap; }
+.a-rich .a-rich__custom input.a-rich__hex { width: 120px; flex: none; min-height: 40px; }
+.a-rich .a-rich__picker { flex: none; display: inline-flex; }
+.a-rich .a-rich__picker input { width: 44px; min-height: 40px; height: 40px; }

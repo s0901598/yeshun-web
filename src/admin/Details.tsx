@@ -4,6 +4,7 @@ import { photoUrl, removeFileIfUnused, uploadImage } from './lib';
 import ListEditor, { type Row } from './ListEditor';
 import { detailsEnabled } from '../data/site';
 import { Field, PhotoPicker } from './ui';
+import { RichField } from './RichText';
 
 export default function Details() {
   return (
@@ -47,8 +48,8 @@ function DetailForm(props: { row: Row; save: (patch: Record<string, unknown>) =>
         <PhotoPicker busy={uploading} onFiles={upload} label="換照片" />
       </div>
       <Field label="標題"><input required value={form.title} onInput={set('title')} placeholder="例：防水工程" /></Field>
-      <Field label="一句話重點" hint="首頁與細節頁的金色短句"><input value={form.summary} onInput={set('summary')} /></Field>
-      <Field label="詳細說明"><textarea rows={4} value={form.body} onInput={set('body')} /></Field>
+      <RichField label="一句話重點" hint="首頁與細節頁的金色短句" value={form.summary} onInput={(v) => setForm({ ...form, summary: v })} />
+      <RichField label="詳細說明" multiline rows={4} value={form.body} onInput={(v) => setForm({ ...form, body: v })} hint="選取文字後可以加粗、上色。" />
       <button class="a-btn a-btn--primary" disabled={props.busy}>儲存</button>
     </form>
   );

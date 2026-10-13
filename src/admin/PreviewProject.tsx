@@ -1,4 +1,5 @@
 // 案例預覽：用跟官網案例頁一樣的版面，顯示後台已儲存（含尚未發布）的內容。只有登入的後台人員看得到。
+import { plainText, richHtml } from '../lib/rich';
 import { useEffect, useState } from 'preact/hooks';
 import { categoryLabels, statusLabels, type Category, type Status } from '../data/projects';
 import { photoUrl, siteUrl, supabase } from './lib';
@@ -89,7 +90,7 @@ export default function PreviewProject() {
             <div class="gallery" style={`--thumbs: ${Math.max(Math.min(gallery.length - 1, 3), 1)}`}>
               {gallery.map((ph, i) => (
                 <div class={`gallery__item corners ${i === 0 ? 'gallery__item--main' : ''}`}>
-                  <img src={ph.url} alt={ph.caption} />
+                  <img src={ph.url} alt={plainText(ph.caption)} />
                   {ph.draft && <span class="pv-flag">未發布</span>}
                 </div>
               ))}
@@ -105,13 +106,13 @@ export default function PreviewProject() {
           <div class="reveal is-in">
             <p class="eyebrow">OVERVIEW</p>
             <h2 class="h-section">案例說明</h2>
-            <p class="about__text">{pj.summary}</p>
+            <p class="about__text" dangerouslySetInnerHTML={{ __html: richHtml(pj.summary) }} />
           </div>
           {pj.highlights?.length > 0 && (
             <div class="reveal is-in">
               <p class="eyebrow">KEY POINTS</p>
               <ul class="highlights">
-                {pj.highlights.map((h: string, i: number) => <li><span class="mono">{String(i + 1).padStart(2, '0')}</span>{h}</li>)}
+                {pj.highlights.map((h: string, i: number) => <li><span class="mono">{String(i + 1).padStart(2, '0')}</span><span dangerouslySetInnerHTML={{ __html: richHtml(h) }} /></li>)}
               </ul>
             </div>
           )}
@@ -139,13 +140,13 @@ export default function PreviewProject() {
                         {st.name}
                         {current && <em class="stage__live">進行中</em>}
                       </h3>
-                      <p class="stage__note">{st.note}</p>
+                      <p class="stage__note" dangerouslySetInnerHTML={{ __html: richHtml(st.note) }} />
                     </div>
                     {st.photos.length > 0 && (
                       <ul class="stage__photos">
                         {st.photos.map((ph) => (
                           <li class="pv-photo">
-                            <button type="button"><img src={photoUrl(ph.path)} alt={ph.caption} /></button>
+                            <button type="button"><img src={photoUrl(ph.path)} alt={plainText(ph.caption)} /></button>
                             {!ph.published && <span class="pv-flag">未發布</span>}
                           </li>
                         ))}

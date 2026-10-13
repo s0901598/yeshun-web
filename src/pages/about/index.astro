@@ -5,25 +5,23 @@ import Base from '../../layouts/Base.astro';
 import ContactCTA from '../../components/ContactCTA.astro';
 import ProjectCard from '../../components/ProjectCard.astro';
 import { getCompanies, getProjects, getSettings } from '../../lib/data';
+import { plainText, richHtml, splitNote } from '../../lib/rich';
 
 const { yeshun, yaosan } = await getCompanies();
 const settings = await getSettings();
 const all = await getProjects();
 const cases = all.slice(0, 6);
 // 「廠房與公共工程（工業廠房、公共基礎建設）」→ 主標＋括號裡的說明
-const services = settings.aboutServices.map((s) => {
-  const m = s.match(/^(.+?)[（(](.+)[）)]$/);
-  return m ? { main: m[1], note: m[2] } : { main: s, note: '' };
-});
+const services = settings.aboutServices.map(splitNote);
 ---
-<Base title={settings.aboutTitle} description={settings.aboutIntro[0] ?? `${yeshun.shortName}｜${yaosan.shortName}`}>
+<Base title={settings.aboutTitle} description={plainText(settings.aboutIntro[0]) || `${yeshun.shortName}｜${yaosan.shortName}`}>
   <section class="page-hero">
     <div class="page-hero__bg" aria-hidden="true"><img src={u('/images/hero-site.webp')} alt="" /></div>
     <div class="container">
       <p class="eyebrow">ABOUT</p>
       <h1 class="h-display">{settings.aboutTitle}</h1>
       <div class="intro">
-        {settings.aboutIntro.map((p) => <p>{p}</p>)}
+        {settings.aboutIntro.map((p) => <p set:html={richHtml(p)} />)}
       </div>
     </div>
   </section>
@@ -37,12 +35,12 @@ const services = settings.aboutServices.map((s) => {
             <li class="feature" style={`--i: ${i}`}>
               <button type="button" class="feature__head" aria-expanded="false" aria-controls={`feature-${i}`} data-feature-toggle>
                 <span class="feature__no mono">{String(i + 1).padStart(2, '0')}</span>
-                {f.title && <h2 class="feature__title">{f.title}</h2>}
+                {f.title && <h2 class="feature__title" set:html={richHtml(f.title)} />}
                 <span class="feature__plus" aria-hidden="true"></span>
               </button>
               <div class="feature__more" id={`feature-${i}`}>
-                {f.lead && <p class="feature__lead">{f.lead}</p>}
-                {f.body && <p class="feature__body">{f.body}</p>}
+                {f.lead && <p class="feature__lead" set:html={richHtml(f.lead)} />}
+                {f.body && <p class="feature__body" set:html={richHtml(f.body)} />}
               </div>
             </li>
           ))}
@@ -63,8 +61,8 @@ const services = settings.aboutServices.map((s) => {
             <li>
               <span class="services__no mono">{String(i + 1).padStart(2, '0')}</span>
               <span>
-                <span class="services__main">{s.main}</span>
-                {s.note && <span class="services__note">{s.note}</span>}
+                <span class="services__main" set:html={richHtml(s.main)} />
+                {s.note && <span class="services__note" set:html={richHtml(s.note)} />}
               </span>
             </li>
           ))}

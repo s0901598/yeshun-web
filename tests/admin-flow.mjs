@@ -228,13 +228,13 @@ const aboutCols = 'about_title, about_intro, about_features, about_services, clo
 const { data: origAbout } = await svc.from('site_settings').select(aboutCols).eq('id', 1).single();
 const aboutCard = p.locator('.a-card', { hasText: '公司介紹頁' });
 await aboutCard.getByLabel(/^頁面名稱/).fill('E2E 頁面名稱');
-await aboutCard.getByLabel('第 1 格標題').fill('E2E 特色標題');
+await aboutCard.getByRole('textbox', { name: '第 1 格標題', exact: true }).fill('E2E 特色標題');
 await aboutCard.getByRole('button', { name: '＋ 新增一格' }).click();
 const newNo = origAbout.about_features.length + 1;
-await aboutCard.getByLabel(`第 ${newNo} 格標題`).fill('E2E 新增格');
-await aboutCard.getByLabel(`第 ${newNo} 格內文`).fill('E2E 內文');
+await aboutCard.getByRole('textbox', { name: `第 ${newNo} 格標題`, exact: true }).fill('E2E 新增格');
+await aboutCard.getByRole('textbox', { name: `第 ${newNo} 格內文`, exact: true }).fill('E2E 內文');
 await aboutCard.getByRole('button', { name: '↑ 上移' }).last().click();
-await aboutCard.getByLabel('引言').fill('「E2E 引言」');
+await aboutCard.getByRole('textbox', { name: '引言', exact: true }).fill('「E2E 引言」');
 await p.getByRole('button', { name: '全部儲存並上傳' }).click();
 check(await toastHas(p, '已全部儲存'), 'about page content saved');
 const { data: ab } = await svc.from('site_settings').select(aboutCols).eq('id', 1).single();
@@ -269,6 +269,46 @@ const { data: h2 } = await svc.from('site_settings').select('hero_images').eq('i
 const left = await heroFiles();
 check(JSON.stringify(h2.hero_images) === JSON.stringify(origHero.hero_images), 'hero photos restored');
 check(h1.hero_images.slice(base).every((x) => !left.includes(x)), 'deleted hero files removed from storage');
+
+// ---------- 10d. 文字上色、加粗：選取「公司介紹頁 → 介紹」第 2–4 個字 → 加粗 → 輸入色號上色 → 存檔；再清除顏色（測完還原） ----------
+const { data: origIntro } = await svc.from('site_settings').select('about_intro').eq('id', 1).single();
+await p.reload(); await p.getByRole('heading', { name: '公司資料' }).waitFor();
+const introBox = p.getByRole('textbox', { name: '介紹', exact: true });
+// 依「第幾個字」選取（文字可能被粗體、顏色切成好幾段）
+const selectChars = (from, to) => introBox.evaluate((el, [a, b]) => {
+  const point = (target) => {
+    const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let pos = 0, n;
+    while ((n = w.nextNode())) { if (target <= pos + n.textContent.length) return [n, target - pos]; pos += n.textContent.length; }
+  };
+  const r = document.createRange(); r.setStart(...point(a)); r.setEnd(...point(b));
+  el.focus(); const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+}, [from, to]);
+try {
+  const plainIntro = origIntro.about_intro.replace(/\{\{[^|]*\|([^}]*)\}\}/g, '$1');
+  const word = plainIntro.slice(1, 4);
+  await selectChars(1, 4);
+  await p.getByRole('button', { name: '介紹 加粗', exact: true }).click();
+  await p.getByRole('button', { name: '介紹 文字顏色', exact: true }).click();
+  await p.getByLabel('色號').fill('#2b5c8a');
+  await p.getByRole('button', { name: '套用' }).click();
+  check(await p.locator('.a-rich__pbox--light .rt').first().isVisible(), 'rich preview shown in admin');
+  await p.getByRole('button', { name: '全部儲存並上傳' }).click();
+  check(await toastHas(p, '已全部儲存'), 'styled text saved');
+  const { data: st1 } = await svc.from('site_settings').select('about_intro').eq('id', 1).single();
+  check(st1.about_intro.startsWith(`${plainIntro[0]}{{b #2b5c8a|${word}}}${plainIntro.slice(4, 8)}`), `bold + color markup saved (${st1.about_intro.slice(0, 30)})`);
+  await selectChars(1, 4);
+  await p.getByRole('button', { name: '介紹 文字顏色', exact: true }).click();
+  await p.getByRole('button', { name: '清除顏色' }).click();
+  await p.getByRole('button', { name: '全部儲存並上傳' }).click();
+  await toastHas(p, '已全部儲存');
+  const { data: st2 } = await svc.from('site_settings').select('about_intro').eq('id', 1).single();
+  check(st2.about_intro.startsWith(`${plainIntro[0]}{{b|${word}}}`), 'clear color keeps bold');
+} finally {
+  // 測試中途出錯也一定還原
+  await svc.from('site_settings').update({ about_intro: origIntro.about_intro }).eq('id', 1);
+}
+const { data: st4 } = await svc.from('site_settings').select('about_intro').eq('id', 1).single();
+check(st4.about_intro === origIntro.about_intro, 'intro restored');
 
 const errs = p.errors;
 await browser.close();

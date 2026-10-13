@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { lines, must, photoUrl, refreshSiteStatus, removeFileIfUnused, setUnsaved, supabase, uploadImage } from './lib';
 import { Field, PhotoPicker, toast } from './ui';
+import { RichField, RichText } from './RichText';
 
 interface CompanyRow {
   id: 'yeshun' | 'yaosan'; name: string; short_name: string; english_name: string; field: string; intro: string;
@@ -62,6 +63,7 @@ export default function Companies() {
 
   const patchCompany = (id: string, patch: Partial<CompanyForm>) => setCompanies(companies.map((c) => (c.id === id ? { ...c, ...patch } : c)));
   const setS = (k: keyof Omit<SettingsRow, 'stats' | 'about_features'>) => (e: Event) => setSettings({ ...settings, [k]: (e.target as HTMLInputElement).value });
+  const setV = (k: keyof Omit<SettingsRow, 'stats' | 'about_features'>) => (v: string) => setSettings({ ...settings, [k]: v });
   const setFeatures = (about_features: Feature[]) => setSettings({ ...settings, about_features });
   const setFeature = (i: number, k: keyof Feature, v: string) => setFeatures(settings.about_features.map((f, j) => (j === i ? { ...f, [k]: v } : f)));
   const moveFeature = (i: number, d: number) => {
@@ -140,19 +142,20 @@ export default function Companies() {
       <div class="a-card">
         <h3>公司介紹頁{settingsDirty && <span class="a-dot">未儲存</span>}</h3>
         <Field label="頁面名稱" hint="顯示在：選單、公司介紹頁的大標題、頁尾的網站地圖、瀏覽器分頁標題"><input value={settings.about_title} onInput={setS('about_title')} /></Field>
-        <Field label="介紹" hint="一行就是一段。顯示在：公司介紹頁最上方"><textarea rows={8} value={settings.about_intro} onInput={setS('about_intro')} /></Field>
+        <RichField label="介紹" multiline rows={8} value={settings.about_intro} onInput={setV('about_intro')} hint="一行就是一段。顯示在：公司介紹頁最上方" />
 
         <h4 class="a-subhead">特色（每一項是一格）</h4>
-        <p class="a-hint">顯示在：公司介紹頁的五格。官網上會一格一格依序浮出；手機版只顯示標題，點一下才展開內文。</p>
+        <p class="a-hint">顯示在：公司介紹頁的五格。官網上會一格一格依序浮出；手機版只顯示標題，點一下才展開內文。所有文字都可以選取後加粗、上色。</p>
         <ul class="a-features">
           {settings.about_features.map((f, i) => (
             <li>
               <div class="a-features__head">
                 <span class="a-features__no">{String(i + 1).padStart(2, '0')}</span>
-                <input aria-label={`第 ${i + 1} 格標題`} placeholder="標題，例：精湛工藝，嚴格把關" value={f.title} onInput={(e) => setFeature(i, 'title', (e.target as HTMLInputElement).value)} />
+                <span class="a-features__name">標題</span>
               </div>
-              <input class="a-features__lead" aria-label={`第 ${i + 1} 格重點句`} placeholder="重點句（選填，大字顯示在內文上方），例：從原料到竣工，層層把關" value={f.lead ?? ''} onInput={(e) => setFeature(i, 'lead', (e.target as HTMLInputElement).value)} />
-              <textarea aria-label={`第 ${i + 1} 格內文`} rows={3} placeholder="內文" value={f.body} onInput={(e) => setFeature(i, 'body', (e.target as HTMLTextAreaElement).value)} />
+              <RichText label={`第 ${i + 1} 格標題`} placeholder="標題，例：精湛工藝，嚴格把關" value={f.title} onInput={(v) => setFeature(i, 'title', v)} />
+              <RichText label={`第 ${i + 1} 格重點句`} placeholder="重點句（選填，大字顯示在內文上方），例：從原料到竣工，層層把關" value={f.lead ?? ''} onInput={(v) => setFeature(i, 'lead', v)} />
+              <RichText label={`第 ${i + 1} 格內文`} multiline rows={3} placeholder="內文" value={f.body} onInput={(v) => setFeature(i, 'body', v)} />
               <div class="a-features__btns">
                 <button type="button" class="a-text-btn" disabled={i === 0} onClick={() => moveFeature(i, -1)}>↑ 上移</button>
                 <button type="button" class="a-text-btn" disabled={i === settings.about_features.length - 1} onClick={() => moveFeature(i, 1)}>↓ 下移</button>
@@ -164,12 +167,12 @@ export default function Companies() {
         <button type="button" class="a-btn a-btn--ghost a-btn--small" onClick={() => setFeatures([...settings.about_features, { title: '', lead: '', body: '' }])}>＋ 新增一格</button>
 
         <h4 class="a-subhead">服務項目</h4>
-        <Field label="服務項目" hint="顯示在：公司介紹頁的「服務項目」。一行寫一項，括號裡的文字會變成小字說明，例：廠房與公共工程（工業廠房、公共基礎建設）"><textarea rows={6} value={settings.about_services} onInput={setS('about_services')} /></Field>
+        <RichField label="服務項目" multiline rows={6} value={settings.about_services} onInput={setV('about_services')} hint="顯示在：公司介紹頁的「服務項目」。一行寫一項，括號裡的文字會變成小字說明，例：廠房與公共工程（工業廠房、公共基礎建設）" />
 
         <h4 class="a-subhead">結語</h4>
         <p class="a-hint">顯示在：每一頁最下方（聯絡頁除外），和「預約諮詢」按鈕一起。</p>
-        <Field label="引言" hint="不用加「」，官網會自動加上"><input value={settings.closing_quote} onInput={setS('closing_quote')} /></Field>
-        <Field label="結語"><textarea rows={2} value={settings.closing_text} onInput={setS('closing_text')} /></Field>
+        <RichField label="引言" value={settings.closing_quote} onInput={setV('closing_quote')} hint="不用加「」，官網會自動加上" />
+        <RichField label="結語" value={settings.closing_text} onInput={setV('closing_text')} />
       </div>
 
       <div class="a-card">
@@ -206,8 +209,8 @@ export default function Companies() {
               <Field label="英文名稱" hint={c.id === 'yeshun' ? '顯示在：頁首 Logo 第二行「｜」的左邊、頁尾版權' : '顯示在：頁首 Logo 第二行「｜」的右邊、頁尾版權'}><input value={c.english_name} onInput={(e) => patchCompany(c.id, { english_name: (e.target as HTMLInputElement).value })} /></Field>
               <Field label="業務類別" hint={`顯示在：頁尾、首頁「服務項目」${c.id === 'yeshun' ? '左' : '右'}欄的標題`}><input value={c.field} onInput={(e) => patchCompany(c.id, { field: (e.target as HTMLInputElement).value })} /></Field>
             </div>
-            <Field label="公司介紹" hint={`顯示在：首頁「服務項目」${c.id === 'yeshun' ? '左' : '右'}欄的說明文字`}><textarea rows={4} value={c.intro} onInput={(e) => patchCompany(c.id, { intro: (e.target as HTMLTextAreaElement).value })} /></Field>
-            <Field label="服務項目" hint={`一行寫一項。顯示在：首頁「服務項目」${c.id === 'yeshun' ? '左' : '右'}欄的清單（跟公司介紹頁的服務項目是分開的）`}><textarea rows={5} value={c.services} onInput={(e) => patchCompany(c.id, { services: (e.target as HTMLTextAreaElement).value })} /></Field>
+            <RichField label="公司介紹" multiline rows={4} value={c.intro} onInput={(v) => patchCompany(c.id, { intro: v })} hint={`顯示在：首頁「服務項目」${c.id === 'yeshun' ? '左' : '右'}欄的說明文字`} />
+            <RichField label="服務項目" multiline rows={5} value={c.services} onInput={(v) => patchCompany(c.id, { services: v })} hint={`一行寫一項。顯示在：首頁「服務項目」${c.id === 'yeshun' ? '左' : '右'}欄的清單（跟公司介紹頁的服務項目是分開的）`} />
 
             <h4 class="a-subhead">登記資料</h4>
             <Field label="登記字號" hint="例：內營室業字第 ○○○○ 號。顯示在：頁尾（空白時不顯示）"><input value={c.license_no} onInput={(e) => patchCompany(c.id, { license_no: (e.target as HTMLInputElement).value })} /></Field>

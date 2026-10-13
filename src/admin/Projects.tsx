@@ -6,6 +6,7 @@ import {
   removeFileIfUnused, setUnsaved, siteUrl, supabase, uploadImage,
 } from './lib';
 import { Field, PhotoPicker, toast } from './ui';
+import { RichField } from './RichText';
 import Stages, { stageChanges, type PhotoDraft, type StageDraft } from './Stages';
 
 export interface ProjectRow {
@@ -343,8 +344,8 @@ function ProjectEditor(props: { id: string }) {
           <Field label="坪數"><input type="number" inputMode="decimal" min="0" step="0.1" value={form.area_ping} onInput={set('area_ping')} /></Field>
           <Field label="工期（天）"><input type="number" inputMode="numeric" min="0" value={form.duration_days} onInput={set('duration_days')} /></Field>
         </div>
-        <Field label="案例說明"><textarea rows={4} value={form.summary} onInput={set('summary')} /></Field>
-        <Field label="案例重點" hint="一行寫一項"><textarea rows={4} value={form.highlights} onInput={set('highlights')} /></Field>
+        <RichField label="案例說明" multiline rows={4} value={form.summary} onInput={(v) => setForm({ ...form, summary: v })} hint="選取文字後可以加粗、上色。" />
+        <RichField label="案例重點" multiline rows={4} value={form.highlights} onInput={(v) => setForm({ ...form, highlights: v })} hint="一行寫一項。選取文字後可以加粗、上色。" />
         <label class="a-check">
           <input type="checkbox" checked={form.featured} onChange={(e) => setForm({ ...form, featured: (e.target as HTMLInputElement).checked })} />
           放在首頁精選

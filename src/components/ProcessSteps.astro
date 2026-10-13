@@ -1,6 +1,7 @@
 ---
 // 首頁精簡版流程：捲到這裡時，連接線畫出來，步驟依序出現
 import { getProcessSteps } from '../lib/data';
+import { richHtml } from '../lib/rich';
 
 const processSteps = await getProcessSteps();
 ---
@@ -10,7 +11,7 @@ const processSteps = await getProcessSteps();
       <span class="step__no mono">{step.no}</span>
       <span class="step__node" aria-hidden="true"></span>
       <h3 class="step__title">{step.title}</h3>
-      <p class="step__desc">{step.desc}</p>
+      <p class="step__desc" set:html={richHtml(step.desc)} />
     </li>
   ))}
 </ol>

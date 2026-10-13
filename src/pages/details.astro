@@ -5,6 +5,7 @@ import ContactCTA from '../components/ContactCTA.astro';
 import Todo from '../components/Todo.astro';
 import { getDetails } from '../lib/data';
 import { detailsEnabled } from '../data/site';
+import { richHtml } from '../lib/rich';
 
 // 目前隱藏：網址直接轉回首頁（src/data/site.ts 的 detailsEnabled 改成 true 就恢復）
 if (!detailsEnabled) return Astro.redirect(u('/'));
@@ -32,8 +33,8 @@ const details = await getDetails();
             <div class="item__body">
               <p class="eyebrow">{d.code}</p>
               <h2 class="item__title">{d.title}</h2>
-              <p class="item__summary">{d.summary}</p>
-              <p class="item__text">{d.body}</p>
+              <p class="item__summary" set:html={richHtml(d.summary)} />
+              <p class="item__text" set:html={richHtml(d.body)} />
             </div>
           </li>
         ))}

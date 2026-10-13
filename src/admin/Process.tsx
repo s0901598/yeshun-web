@@ -3,6 +3,7 @@ import { useState } from 'preact/hooks';
 import { lines } from './lib';
 import ListEditor, { type Row } from './ListEditor';
 import { Field } from './ui';
+import { RichField } from './RichText';
 
 export default function Process() {
   return (
@@ -39,8 +40,8 @@ function StepForm(props: { row: Row; save: (patch: Record<string, unknown>) => P
         <Field label="步驟名稱"><input required value={form.title} onInput={set('title')} placeholder="例：現場丈量" /></Field>
         <Field label="英文小標" hint="流程頁上的小字，例如 SURVEY"><input value={form.en} onInput={set('en')} /></Field>
       </div>
-      <Field label="一句話說明"><input value={form.description} onInput={set('description')} /></Field>
-      <Field label="這一步會做的事" hint="一行寫一項"><textarea rows={4} value={form.items} onInput={set('items')} /></Field>
+      <RichField label="一句話說明" value={form.description} onInput={(v) => setForm({ ...form, description: v })} hint="選取文字後可以加粗、上色。" />
+      <RichField label="這一步會做的事" multiline rows={4} value={form.items} onInput={(v) => setForm({ ...form, items: v })} hint="一行寫一項。選取文字後可以加粗、上色。" />
       <Field label="大約時間" hint="例：約 1 週、2–4 週"><input value={form.duration} onInput={set('duration')} /></Field>
       <button class="a-btn a-btn--primary" disabled={props.busy}>儲存</button>
     </form>

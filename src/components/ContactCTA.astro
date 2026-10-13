@@ -1,15 +1,16 @@
 ---
-// 全站頁尾前的結語＋預約諮詢按鈕。結語在後台「公司資料 → 關於我們」修改
+// 全站頁尾前的結語＋預約諮詢按鈕。結語在後台「公司資料 → 公司介紹頁 → 結語」修改
 import { u } from '../lib/url';
 import { getSettings } from '../lib/data';
+import { richHtml } from '../lib/rich';
 
 const { closingQuote, closingText } = await getSettings();
 ---
 <section class="cta section">
   <div class="container cta__inner reveal">
     <p class="eyebrow">OUR PROMISE</p>
-    {closingQuote && <blockquote class="cta__quote">「{closingQuote}」</blockquote>}
-    {closingText && <p class="cta__text">{closingText}</p>}
+    {closingQuote && <blockquote class="cta__quote" set:html={`「${richHtml(closingQuote)}」`} />}
+    {closingText && <p class="cta__text" set:html={richHtml(closingText)} />}
     <a href={u('/contact')} class="btn btn--primary cta__btn">預約諮詢 <span class="arrow">→</span></a>
   </div>
 </section>

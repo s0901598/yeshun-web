@@ -6,6 +6,7 @@ import ContactCTA from '../../components/ContactCTA.astro';
 import ProjectCard from '../../components/ProjectCard.astro';
 import { categoryLabels, statusLabels, type Project } from '../../data/projects';
 import { getCompanies, getProjects } from '../../lib/data';
+import { plainText, richHtml } from '../../lib/rich';
 
 export async function getStaticPaths() {
   const all = await getProjects();
@@ -27,7 +28,7 @@ const gallery = [
 const related = all.filter((pj) => pj.slug !== project.slug && pj.category === project.category).slice(0, 3);
 const others = related.length ? related : all.filter((pj) => pj.slug !== project.slug).slice(0, 3);
 ---
-<Base title={project.title} description={project.summary}>
+<Base title={project.title} description={plainText(project.summary)}>
 <div class="pd">
   <section class="intro">
     <div class="container">
@@ -51,8 +52,8 @@ const others = related.length ? related : all.filter((pj) => pj.slug !== project
     <div class="container">
       <div class="gallery" style={`--thumbs: ${Math.max(Math.min(gallery.length - 1, 3), 1)}`}>
         {gallery.map((ph, i) => (
-          <button type="button" class:list={['gallery__item', 'corners', { 'gallery__item--main': i === 0 }]} data-lightbox={ph.url} data-caption={ph.caption}>
-            <img src={ph.url} alt={ph.caption} loading={i === 0 ? 'eager' : 'lazy'} />
+          <button type="button" class:list={['gallery__item', 'corners', { 'gallery__item--main': i === 0 }]} data-lightbox={ph.url} data-caption={plainText(ph.caption)}>
+            <img src={ph.url} alt={plainText(ph.caption)} loading={i === 0 ? 'eager' : 'lazy'} />
           </button>
         ))}
       </div>
@@ -65,14 +66,14 @@ const others = related.length ? related : all.filter((pj) => pj.slug !== project
       <div class="reveal">
         <p class="eyebrow">OVERVIEW</p>
         <h2 class="h-section">案例說明</h2>
-        <p class="about__text">{project.summary}</p>
+        <p class="about__text" set:html={richHtml(project.summary)} />
       </div>
       {project.highlights.length > 0 && (
         <div class="reveal">
           <p class="eyebrow">KEY POINTS</p>
           <ul class="highlights">
             {project.highlights.map((h, i) => (
-              <li><span class="mono">{String(i + 1).padStart(2, '0')}</span>{h}</li>
+              <li><span class="mono">{String(i + 1).padStart(2, '0')}</span><span set:html={richHtml(h)} /></li>
             ))}
           </ul>
         </div>
@@ -103,14 +104,14 @@ const others = related.length ? related : all.filter((pj) => pj.slug !== project
                     {stage.name}
                     {isCurrent && <em class="stage__live">進行中</em>}
                   </h3>
-                  <p class="stage__note">{stage.note}</p>
+                  <p class="stage__note" set:html={richHtml(stage.note)} />
                 </div>
                 {stage.photos.length > 0 && (
                   <ul class="stage__photos">
                     {stage.photos.map((ph) => (
                       <li>
-                        <button type="button" data-lightbox={ph.url} data-caption={`${stage.name}｜${ph.caption}`}>
-                          <img src={ph.url} alt={ph.caption} loading="lazy" />
+                        <button type="button" data-lightbox={ph.url} data-caption={`${stage.name}｜${plainText(ph.caption)}`}>
+                          <img src={ph.url} alt={plainText(ph.caption)} loading="lazy" />
                         </button>
                       </li>
                     ))}

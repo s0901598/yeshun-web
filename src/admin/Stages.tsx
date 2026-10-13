@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { move, photoUrl } from './lib';
 import { Field, MoveButtons, PhotoPicker } from './ui';
+import { RichField, RichText } from './RichText';
 
 export interface PhotoDraft {
   key: string;
@@ -171,7 +172,7 @@ function StageCard(props: CardProps) {
         <Field label="階段名稱"><input value={stage.name} onInput={set('name')} placeholder="例：拆除、水電、木作、完工" /></Field>
         <Field label="日期"><input type="date" value={stage.date} onInput={set('date')} /></Field>
       </div>
-      <Field label="說明"><textarea rows={2} value={stage.note} onInput={set('note')} /></Field>
+      <RichField label="說明" multiline rows={2} value={stage.note} onInput={(v) => props.onPatch({ note: v })} />
 
       <div class="a-photos-head"><strong>照片 {live.length} 張</strong></div>
       {photos.length > 0 && (
@@ -195,8 +196,8 @@ function StageCard(props: CardProps) {
                   <span class={`a-photo__flag a-photo__flag--${st.tone}`}>{st.label}</span>
                   {props.coverKey === ph.key && <span class="a-photo__flag a-photo__flag--cover">封面</span>}
                 </div>
-                <input class="a-photo__caption" placeholder="照片說明（選填）" value={ph.caption}
-                  onInput={(e) => patchPhoto(ph.key, { caption: (e.target as HTMLInputElement).value })} />
+                <RichText compact label="照片說明" placeholder="照片說明（選填）" value={ph.caption}
+                  onInput={(v) => patchPhoto(ph.key, { caption: v })} />
                 <label class="a-check">
                   <input type="checkbox" checked={ph.hidden} onChange={(e) => patchPhoto(ph.key, { hidden: (e.target as HTMLInputElement).checked })} />
                   不放上官網

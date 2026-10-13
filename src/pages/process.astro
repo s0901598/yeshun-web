@@ -5,6 +5,7 @@ import ContactCTA from '../components/ContactCTA.astro';
 import Todo from '../components/Todo.astro';
 import { processTodo } from '../data/site';
 import { getProcessSteps } from '../lib/data';
+import { richHtml } from '../lib/rich';
 
 const processSteps = await getProcessSteps();
 ---
@@ -29,9 +30,9 @@ const processSteps = await getProcessSteps();
             <article class="tl__card corners">
               <p class="tl__en mono">STEP {step.no} / {step.en}</p>
               <h2 class="tl__title">{step.title}</h2>
-              <p class="tl__desc">{step.desc}</p>
+              <p class="tl__desc" set:html={richHtml(step.desc)} />
               <ul class="tl__items">
-                {step.items.map((item) => <li>{item}</li>)}
+                {step.items.map((item) => <li set:html={richHtml(item)} />)}
               </ul>
               <p class="tl__duration"><span class="mono">TIME</span>{step.duration}</p>
             </article>
