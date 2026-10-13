@@ -2,6 +2,8 @@
 
 給有營造、裝修需求的業主看的公司官網。舊站 `yeshuncompany` 保留不動，這是重新製作的新版。
 
+- 需求規格：見 [PROMPT.md](PROMPT.md)
+
 ## 技術
 - Astro（靜態輸出），部署在 GitHub Pages：https://s0901598.github.io/yeshun-web/
 - 內容（案例、施工進度、照片、注重的細節、服務流程）存在 Supabase 專案 `yeshun-web`（東京機房，ref `tstqnfsnjefuwdkywxke`）。注意：同一個帳號下還有另一個無關的專案，不要混用
