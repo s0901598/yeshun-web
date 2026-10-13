@@ -15,10 +15,11 @@ const channels = [
   { en: 'LINE', label: 'LINE 官方帳號', value: settings.lineId, href: settings.lineHref },
   { en: 'EMAIL', label: 'Email', value: settings.email, href: settings.emailHref },
 ].filter((c) => c.value);
+const banner = settings.pageBanner('contact');
 ---
-<Base title="聯絡我們" description="營造工程、室內裝修諮詢與丈量預約，電話、LINE、Email 皆可聯絡。">
+<Base heroImage={banner} title="聯絡我們" description="營造工程、室內裝修諮詢與丈量預約，電話、LINE、Email 皆可聯絡。">
   <section class="page-hero">
-    <div class="page-hero__bg" aria-hidden="true"><img src={u('/images/detail-tools.webp')} alt="" fetchpriority="high" decoding="async" /></div>
+    <div class="page-hero__bg" aria-hidden="true"><img src={banner} alt="" fetchpriority="high" /></div>
     <div class="container">
       <p class="eyebrow">CONTACT</p>
       <h1 class="h-display">聯絡我們</h1>

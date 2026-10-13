@@ -194,6 +194,17 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
     checks++; if (!/\/projects\/$/.test(lp.url())) bad(`${name}/${w}/${theme}: reload on 案例作品 did not stay (${lp.url()})`);
     await Promise.all([lp.waitForNavigation(), lp.locator('.nav__link', { hasText: '公司介紹' }).click()]).catch(() => {});
     checks++; if (await lp.evaluate(() => document.documentElement.classList.contains('is-loading'))) bad(`${name}/${w}/${theme}: loader shown on in-site navigation`);
+    // 重新整理一律回到案例作品最上方：在公司介紹捲到下面再重新整理 → 案例作品、捲動位置 0
+    await lp.goto(B + '/about/', { waitUntil: 'load' }); await lp.evaluate(() => scrollTo(0, 1500)); await lp.waitForTimeout(300);
+    await lp.reload({ waitUntil: 'commit' });
+    await lp.waitForURL(/\/projects\/$/, { timeout: 6000 }).catch(() => {});
+    await lp.waitForFunction(() => !document.documentElement.classList.contains('is-loading'), null, { timeout: 6000 }).catch(() => {});
+    checks++; if (!/\/projects\/$/.test(lp.url()) || await lp.evaluate(() => scrollY) > 5) bad(`${name}/${w}/${theme}: reload did not return to top of 案例作品 (${lp.url()} y=${await lp.evaluate(() => scrollY)})`);
+    await lp.evaluate(() => scrollTo(0, 1200)); await lp.waitForTimeout(300);
+    await lp.reload({ waitUntil: 'load' });
+    await lp.waitForFunction(() => !document.documentElement.classList.contains('is-loading'), null, { timeout: 6000 }).catch(() => {});
+    await lp.waitForTimeout(300);
+    checks++; if (await lp.evaluate(() => scrollY) > 5) bad(`${name}/${w}/${theme}: reload on 案例作品 kept scroll position`);
     await lp.goto(B + '/', { waitUntil: 'load' }); await lp.waitForTimeout(400);
     checks++; if (!/\/yeshun-web\/$/.test(new URL(lp.url()).pathname) || await lp.locator('#site-loader').isVisible()) bad(`${name}/${w}/${theme}: homepage not reachable after loading (${lp.url()})`);
     await lc.close();
@@ -266,17 +277,25 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
     checks++; if (await fp.locator('.form__trap').evaluate((el) => el.getBoundingClientRect().right > 0)) bad(`${name}: bot trap field on screen`);
     await fc.close();
   }
-  // 內頁頁首底圖：網路慢、圖片晚到時先不顯示，下載完才淡入並開始放大（淺色、深色都要）
+  // 內頁頂端底圖：主要頁面之間來回切換，每一頁的底圖都要出現（有載入、看得到、正在放大）；網路慢時圖片到了也要顯示
   for (const theme of ['light', 'dark']) {
     const sc = await b.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: theme });
-    await sc.route(/stage-site\.webp/, async (r) => { await new Promise((ok) => setTimeout(ok, 1500)); await r.continue(); });
-    const sp = await sc.newPage(); await sp.goto(B + '/projects/', { waitUntil: 'domcontentloaded' });
-    const st = () => sp.evaluate(() => { const i = document.querySelector('.page-hero__bg img'); const a = i.getAnimations().find((x) => x.animationName === 'page-hero-zoom'); return { op: +getComputedStyle(i).opacity, zoom: a ? a.currentTime : -1 }; });
-    await sp.waitForTimeout(500); const early = await st();
-    await sp.waitForTimeout(2600); const late = await st();
-    checks++; if (early.op > 0.05 || early.zoom >= 0) bad(`${name}/${theme}: banner shown or zooming before image loaded ${JSON.stringify(early)}`);
-    checks++; if (late.op < 0.5 || late.zoom <= 0 || late.zoom > 2500) bad(`${name}/${theme}: banner not faded in / zoom not started at load ${JSON.stringify(late)}`);
+    const sp = await sc.newPage(); await sp.goto(B + '/projects/', { waitUntil: 'load' });
+    const banner = () => sp.evaluate(() => { const i = document.querySelector('.page-hero__bg img'); const z = i.getAnimations().find((x) => x.animationName === 'page-hero-zoom'); return { loaded: i.complete && i.naturalWidth > 0, op: +getComputedStyle(i).opacity, zooming: !!z && z.playState === 'running' }; });
+    for (const label of ['公司介紹', '服務流程', '案例作品', '聯絡我們', '案例作品']) {
+      const link = label === '聯絡我們' ? sp.locator('.nav__cta') : sp.locator('.nav__link', { hasText: label });
+      await Promise.all([sp.waitForNavigation(), link.click()]);
+      await sp.waitForTimeout(1300);
+      const r = await banner();
+      checks++; if (!r.loaded || r.op < 0.5 || !r.zooming) bad(`${name}/${theme}: banner missing after switching to ${label} ${JSON.stringify(r)}`);
+    }
     await sc.close();
+    const slow = await b.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: theme });
+    await slow.route(/stage-site\.webp/, async (r) => { await new Promise((ok) => setTimeout(ok, 1500)); await r.continue(); });
+    const sl = await slow.newPage(); await sl.goto(B + '/projects/', { waitUntil: 'load' }); await sl.waitForTimeout(1500);
+    const r = await sl.evaluate(() => { const i = document.querySelector('.page-hero__bg img'); return { loaded: i.complete && i.naturalWidth > 0, op: +getComputedStyle(i).opacity }; });
+    checks++; if (!r.loaded || r.op < 0.5) bad(`${name}/${theme}: banner not shown after slow load ${JSON.stringify(r)}`);
+    await slow.close();
   }
   // 首頁背景輪播：6 秒後換到下一張；/details/ 隱藏中，要轉回首頁
   {

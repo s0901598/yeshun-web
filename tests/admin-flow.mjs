@@ -310,6 +310,32 @@ try {
 const { data: st4 } = await svc.from('site_settings').select('about_intro').eq('id', 1).single();
 check(st4.about_intro === origIntro.about_intro, 'intro restored');
 
+// ---------- 10f. 各頁頂端底圖：上傳「案例作品」的底圖 → 存檔 → 恢復內建照片 → 檔案清掉（一定還原） ----------
+const { data: origBn } = await svc.from('site_settings').select('page_banners').eq('id', 1).single();
+let uploadedBanner = null;
+try {
+  await p.reload(); await p.getByRole('heading', { name: '公司資料' }).waitFor();
+  const bnCard = p.locator('.a-card', { hasText: '各頁頂端底圖' });
+  const projItem = bnCard.locator('li', { hasText: '案例作品' });
+  await projItem.locator('input[type=file]:not([capture])').setInputFiles(photos[0]);
+  check(await projItem.getByText('待上傳').isVisible(), 'banner shows 待上傳 before save');
+  await p.getByRole('button', { name: '全部儲存並上傳' }).click();
+  check(await toastHas(p, '已全部儲存'), 'banner uploaded');
+  const { data: bn1 } = await svc.from('site_settings').select('page_banners').eq('id', 1).single();
+  uploadedBanner = bn1.page_banners.projects;
+  check(uploadedBanner?.startsWith('banners/'), `banner path saved (${uploadedBanner})`);
+  await projItem.getByRole('button', { name: '案例作品恢復內建照片' }).click();
+  await p.getByRole('button', { name: '全部儲存並上傳' }).click();
+  await toastHas(p, '已全部儲存');
+  const { data: bn2 } = await svc.from('site_settings').select('page_banners').eq('id', 1).single();
+  check(!bn2.page_banners.projects, 'banner reset to built-in');
+  const left = ((await svc.storage.from('photos').list('banners')).data ?? []).map((f) => `banners/${f.name}`);
+  check(!left.includes(uploadedBanner), 'replaced banner file removed from storage');
+} finally {
+  await svc.from('site_settings').update({ page_banners: origBn.page_banners }).eq('id', 1);
+  if (uploadedBanner) await svc.storage.from('photos').remove([uploadedBanner]);
+}
+
 // ---------- 10e. 客戶需求：新需求出現在分頁（含數字）→ 標記已處理 → 刪除；測試資料一定清掉 ----------
 const { data: inq } = await svc.from('inquiries').insert({ name: 'E2E 測試客戶', phone: '0912-000-111', service: '營造工程（業順營造）', message: '自動測試，請忽略' }).select('id').single();
 try {

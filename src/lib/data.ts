@@ -1,6 +1,8 @@
 // 官網讀取資料的唯一入口：打包網站時從 Supabase 讀取內容。
 // 使用公開金鑰（publishable key），資料庫權限規則保證只讀得到「已發布」的內容。
 import { createClient } from '@supabase/supabase-js';
+import { u } from './url';
+import { defaultBanners, type BannerKey } from '../data/site';
 import type { Category, CompanyId, Project, Status } from '../data/projects';
 
 const url = import.meta.env.PUBLIC_SUPABASE_URL;
@@ -129,6 +131,8 @@ export interface Settings {
   address: string; hours: string; mapEmbed: string; stats: { label: string; value: number; suffix: string }[];
   // 關於我們頁與全站結語
   aboutTitle: string; heroImages: string[];
+  /** 各頁頂端底圖：後台上傳的網址；沒上傳的頁面用內建照片 */
+  pageBanner: (key: BannerKey) => string;
   aboutIntro: string[]; aboutFeatures: { title: string; lead: string; body: string }[]; aboutServices: string[];
   closingQuote: string; closingText: string;
 }
@@ -150,6 +154,7 @@ export function getSettings(): Promise<Settings> {
       aboutTitle: (r.about_title ?? '').trim() || '公司介紹',
       // 首頁背景輪播：後台上傳的照片；還沒上傳時用網站內建的工地照
       heroImages: (r.hero_images ?? []).map((x: any) => photoUrl(String(x))).filter(Boolean),
+      pageBanner: (key: BannerKey) => (r.page_banners?.[key] ? photoUrl(String(r.page_banners[key])) : u(defaultBanners[key])),
       aboutIntro: lines(r.about_intro),
       aboutFeatures: (r.about_features ?? []).filter((x: any) => x?.title?.trim() || x?.body?.trim())
         .map((x: any) => ({ title: String(x.title ?? '').trim(), lead: String(x.lead ?? '').trim(), body: String(x.body ?? '').trim() })),

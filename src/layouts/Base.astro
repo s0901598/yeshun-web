@@ -7,12 +7,12 @@ import { plainText } from '../lib/rich';
 import Loader from '../components/Loader.astro';
 import CookieNotice from '../components/CookieNotice.astro';
 
-interface Props { title?: string; description?: string; noindex?: boolean }
+interface Props { title?: string; description?: string; noindex?: boolean; heroImage?: string }
 const companies = await getCompanies();
 const settings = await getSettings();
 const { yeshun, yaosan } = companies;
 const nav = siteNav(settings.aboutTitle);
-const { title, description = plainText(yeshun.intro), noindex = false } = Astro.props;
+const { title, description = plainText(yeshun.intro), noindex = false, heroImage } = Astro.props;
 const pageTitle = title ? `${title}｜${yeshun.name}` : `${yeshun.name}｜營造工程・室內裝修`;
 const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 const isActive = (href: string) => path === u(href) || path.startsWith(u(href) + '/');
@@ -54,9 +54,12 @@ const isActive = (href: string) => path === u(href) || path.startsWith(u(href) +
           var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
           var reload = nav ? nav.type === 'reload' : performance.navigation && performance.navigation.type === 1;
           if (!seen || reload) document.documentElement.classList.add('is-loading');
+          // 重新整理：不要停在原本捲到的位置（Loading 完會回到預設的案例作品頁最上方）
+          if (reload) { window.__yeshunReload = true; try { history.scrollRestoration = 'manual'; } catch (e) {} }
         })();
       </script>
     )}
+    {heroImage && <link rel="preload" as="image" href={heroImage} fetchpriority="high" />}
     <link rel="icon" type="image/png" href={u('/favicon.png')} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -309,15 +312,6 @@ const isActive = (href: string) => path === u(href) || path.startsWith(u(href) +
       document.querySelectorAll('.reveal, [data-stagger]').forEach((el) => io.observe(el));
     </script>
     {!noindex && cookieNoticeEnabled && <CookieNotice />}
-    <script is:inline>
-      // 內頁頁首底圖：下載完才淡入並開始放大（已經在快取裡的立刻開始）
-      document.querySelectorAll('.page-hero__bg').forEach(function (bg) {
-        var img = bg.querySelector('img');
-        var ready = function () { bg.classList.add('is-ready'); };
-        if (!img || (img.complete && img.naturalWidth)) ready();
-        else { img.addEventListener('load', ready); img.addEventListener('error', ready); }
-      });
-    </script>
   </body>
 </html>
 

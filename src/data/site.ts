@@ -28,3 +28,14 @@ export const siteNav = (aboutTitle: string): NavItem[] => allNav
 
 // 服務流程內容改由後台管理；todo 為 true 時流程頁顯示「內容待確認」
 export const processTodo = true;
+
+// 各頁頂端底圖（banner）：後台「公司資料 → 各頁頂端底圖」可以換；沒上傳時用這裡的內建照片
+export type BannerKey = 'about' | 'projects' | 'process' | 'contact' | 'details';
+export const bannerPages: { key: BannerKey; label: string }[] = [
+  { key: 'about', label: '公司介紹' }, { key: 'projects', label: '案例作品' },
+  { key: 'process', label: '服務流程' }, { key: 'contact', label: '聯絡我們' },
+];
+export const defaultBanners: Record<BannerKey, string> = {
+  about: '/images/hero-site.webp', projects: '/images/stage-site.webp', process: '/images/detail-plan.webp',
+  contact: '/images/detail-tools.webp', details: '/images/stage-wall.webp',
+};

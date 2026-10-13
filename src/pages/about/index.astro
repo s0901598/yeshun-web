@@ -13,10 +13,11 @@ const all = await getProjects();
 const cases = all.slice(0, 6);
 // 「廠房與公共工程（工業廠房、公共基礎建設）」→ 主標＋括號裡的說明
 const services = settings.aboutServices.map(splitNote);
+const banner = settings.pageBanner('about');
 ---
-<Base title={settings.aboutTitle} description={plainText(settings.aboutIntro[0]) || `${yeshun.shortName}｜${yaosan.shortName}`}>
+<Base heroImage={banner} title={settings.aboutTitle} description={plainText(settings.aboutIntro[0]) || `${yeshun.shortName}｜${yaosan.shortName}`}>
   <section class="page-hero">
-    <div class="page-hero__bg" aria-hidden="true"><img src={u('/images/hero-site.webp')} alt="" fetchpriority="high" decoding="async" /></div>
+    <div class="page-hero__bg" aria-hidden="true"><img src={banner} alt="" fetchpriority="high" /></div>
     <div class="container">
       <p class="eyebrow">ABOUT</p>
       <h1 class="h-display">{settings.aboutTitle}</h1>

@@ -3,17 +3,19 @@ import { u } from '../lib/url';
 import Base from '../layouts/Base.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import Todo from '../components/Todo.astro';
-import { getDetails } from '../lib/data';
+import { getDetails, getSettings } from '../lib/data';
 import { detailsEnabled } from '../data/site';
 import { richHtml } from '../lib/rich';
 
 // 目前隱藏：網址直接轉回首頁（src/data/site.ts 的 detailsEnabled 改成 true 就恢復）
 if (!detailsEnabled) return Astro.redirect(u('/'));
 const details = await getDetails();
+const bannerSettings = await getSettings();
+const banner = bannerSettings.pageBanner('details');
 ---
-<Base title="我們注重的細節" description="防水、水電、隱蔽工程、工地整潔——業順營造在看不見的地方下功夫。">
+<Base heroImage={banner} title="我們注重的細節" description="防水、水電、隱蔽工程、工地整潔——業順營造在看不見的地方下功夫。">
   <section class="page-hero">
-    <div class="page-hero__bg" aria-hidden="true"><img src={u('/images/stage-wall.webp')} alt="" fetchpriority="high" decoding="async" /></div>
+    <div class="page-hero__bg" aria-hidden="true"><img src={banner} alt="" fetchpriority="high" /></div>
     <div class="container">
       <p class="eyebrow">OUR DETAILS</p>
       <h1 class="h-display">看不見的地方，<br />才是重點</h1>

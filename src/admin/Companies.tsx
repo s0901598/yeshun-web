@@ -2,7 +2,8 @@
 // 每個欄位下方的「顯示在：…」標明官網上出現的位置。
 // 修改先暫存，按下方「全部儲存並上傳」才存進後台；按上方「發布到官網」才會更新官網。
 import { useEffect, useState } from 'preact/hooks';
-import { lines, must, photoUrl, refreshSiteStatus, removeFileIfUnused, setUnsaved, supabase, uploadImage } from './lib';
+import { lines, must, photoUrl, refreshSiteStatus, removeFileIfUnused, setUnsaved, siteUrl, supabase, uploadImage } from './lib';
+import { bannerPages, defaultBanners, type BannerKey } from '../data/site';
 import { Field, PhotoPicker, toast } from './ui';
 import { RichField, RichText } from './RichText';
 
@@ -19,6 +20,9 @@ interface SettingsRow {
 }
 // 首頁背景照片：已上傳的（path）或剛選、還沒上傳的（file＋preview）
 interface HeroPhoto { path?: string; file?: File; preview?: string }
+// 各頁頂端底圖：path＝已上傳；file＋preview＝剛選、還沒上傳；都沒有＝用內建照片
+type Banners = Partial<Record<BannerKey, HeroPhoto>>;
+const bannerKey = (b: Banners) => JSON.stringify(bannerPages.map(({ key }) => b[key]?.path ?? b[key]?.preview ?? null));
 const heroKey = (h: HeroPhoto[]) => JSON.stringify(h.map((x) => x.path ?? x.preview));
 type CompanyForm = Omit<CompanyRow, 'services'> & { services: string; licenseFile?: File; licensePreview?: string };
 
@@ -32,6 +36,8 @@ export default function Companies() {
   const [saving, setSaving] = useState('');
   const [heroOrig, setHeroOrig] = useState<HeroPhoto[]>([]);
   const [hero, setHero] = useState<HeroPhoto[]>([]);
+  const [bannersOrig, setBannersOrig] = useState<Banners>({});
+  const [banners, setBanners] = useState<Banners>({});
 
   const load = async () => {
     const cs = (must(await supabase.from('companies').select('*').order('sort')) as CompanyRow[]).map(toCompanyForm);
@@ -46,6 +52,10 @@ export default function Companies() {
     const heroRows = ((st as unknown as { hero_images?: string[] }).hero_images ?? []).map((path) => ({ path }));
     setHeroOrig(heroRows);
     setHero(heroRows);
+    const pb = (st as unknown as { page_banners?: Record<string, string> }).page_banners ?? {};
+    const b: Banners = Object.fromEntries(Object.entries(pb).filter(([, v]) => v).map(([k, v]) => [k, { path: v }]));
+    setBannersOrig(b);
+    setBanners(b);
     setOrig({ companies: cs, settings: s });
     setCompanies(cs);
     setSettings(s);
@@ -55,7 +65,8 @@ export default function Companies() {
   const dirtyCompanies = orig ? companies.filter((c, i) => comparable(c) !== comparable(orig.companies[i]) || c.licenseFile) : [];
   const settingsDirty = !!orig && !!settings && JSON.stringify(settings) !== JSON.stringify(orig.settings);
   const heroDirty = heroKey(hero) !== heroKey(heroOrig);
-  const changes = dirtyCompanies.length + (settingsDirty ? 1 : 0) + (heroDirty ? 1 : 0);
+  const bannersDirty = bannerKey(banners) !== bannerKey(bannersOrig);
+  const changes = dirtyCompanies.length + (settingsDirty ? 1 : 0) + (heroDirty ? 1 : 0) + (bannersDirty ? 1 : 0);
   useEffect(() => { setUnsaved(changes); }, [changes]);
   useEffect(() => () => setUnsaved(0), []);
 
@@ -110,6 +121,21 @@ export default function Companies() {
         must(await supabase.from('site_settings').update({ hero_images: paths }).eq('id', 1));
         for (const h of heroOrig) if (h.path && !paths.includes(h.path)) await removeFileIfUnused(h.path);
         hero.forEach((h) => h.preview && URL.revokeObjectURL(h.preview));
+      }
+      if (bannersDirty) {
+        const saved: Record<string, string> = {};
+        for (const { key, label } of bannerPages) {
+          const b = banners[key];
+          if (b?.path) saved[key] = b.path;
+          else if (b?.file) { setSaving(`上傳「${label}」頂端底圖…`); saved[key] = await uploadImage('banners', b.file); }
+        }
+        const prev = (must(await supabase.from('site_settings').select('page_banners').eq('id', 1).single()) as { page_banners: Record<string, string> }).page_banners ?? {};
+        must(await supabase.from('site_settings').update({ page_banners: { ...prev, ...Object.fromEntries(bannerPages.map(({ key }) => [key, saved[key] ?? null])) } }).eq('id', 1));
+        for (const { key } of bannerPages) {
+          const old = bannersOrig[key]?.path;
+          if (old && old !== saved[key]) await removeFileIfUnused(old);
+          if (banners[key]?.preview) URL.revokeObjectURL(banners[key]!.preview!);
+        }
       }
       if (settingsDirty) {
         setSaving('儲存中…');
@@ -195,6 +221,34 @@ export default function Companies() {
         ) : <p class="a-empty">還沒有上傳，官網目前用內建的工地照。</p>}
         <PhotoPicker label="＋ 加入照片" multiple
           onFiles={(files) => setHero([...hero, ...files.map((file) => ({ file, preview: URL.createObjectURL(file) }))])} />
+      </div>
+
+      <div class="a-card">
+        <h3>各頁頂端底圖{bannersDirty && <span class="a-dot">未儲存</span>}</h3>
+        <p class="a-hint">顯示在：各頁最上方大標題後面的照片（會慢慢放大）。建議用橫式照片；淺色模式會自動轉成黑白，讓白底不偏色。沒上傳的頁面用內建照片。</p>
+        <ul class="a-banners">
+          {bannerPages.map(({ key, label }) => {
+            const b = banners[key];
+            const src = b?.preview ?? (b?.path ? photoUrl(b.path) : siteUrl(defaultBanners[key]));
+            return (
+              <li key={key}>
+                <img src={src} alt={`${label}頂端底圖`} />
+                <div class="a-banners__body">
+                  <strong>{label}</strong>
+                  <span class="a-banners__state">{b?.file ? '待上傳' : b?.path ? '已上傳' : '內建照片'}</span>
+                  <div class="a-banners__btns">
+                    <PhotoPicker label={b?.path || b?.file ? '換一張' : '上傳照片'}
+                      onFiles={(files) => setBanners({ ...banners, [key]: { file: files[0], preview: URL.createObjectURL(files[0]) } })} />
+                    {(b?.path || b?.file) && (
+                      <button type="button" class="a-text-btn a-text-btn--danger" aria-label={`${label}恢復內建照片`}
+                        onClick={() => { const next = { ...banners }; delete next[key]; setBanners(next); }}>恢復內建照片</button>
+                    )}
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       </div>
 
       {companies.map((c) => {

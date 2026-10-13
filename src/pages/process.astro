@@ -4,14 +4,16 @@ import Base from '../layouts/Base.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import Todo from '../components/Todo.astro';
 import { processTodo } from '../data/site';
-import { getProcessSteps } from '../lib/data';
+import { getProcessSteps, getSettings } from '../lib/data';
 import { richHtml } from '../lib/rich';
 
 const processSteps = await getProcessSteps();
+const bannerSettings = await getSettings();
+const banner = bannerSettings.pageBanner('process');
 ---
-<Base title="服務流程" description="從初步諮詢到完工保固，業順營造的五個服務步驟。">
+<Base heroImage={banner} title="服務流程" description="從初步諮詢到完工保固，業順營造的五個服務步驟。">
   <section class="page-hero">
-    <div class="page-hero__bg" aria-hidden="true"><img src={u('/images/detail-plan.webp')} alt="" fetchpriority="high" decoding="async" /></div>
+    <div class="page-hero__bg" aria-hidden="true"><img src={banner} alt="" fetchpriority="high" /></div>
     <div class="container">
       <p class="eyebrow">PROCESS</p>
       <h1 class="h-display">服務流程<Todo show={processTodo} label="內容待確認" /></h1>

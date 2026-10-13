@@ -4,7 +4,7 @@ import Base from '../../layouts/Base.astro';
 import ProjectCard from '../../components/ProjectCard.astro';
 import ContactCTA from '../../components/ContactCTA.astro';
 import { categoryLabels, type Category } from '../../data/projects';
-import { getProjects } from '../../lib/data';
+import { getProjects, getSettings } from '../../lib/data';
 
 const projects = await getProjects();
 const filters: { key: Category | 'all'; label: string; count: number }[] = [
@@ -15,10 +15,12 @@ const filters: { key: Category | 'all'; label: string; count: number }[] = [
     count: projects.filter((pj) => pj.category === key).length,
   })),
 ];
+const bannerSettings = await getSettings();
+const banner = bannerSettings.pageBanner('projects');
 ---
-<Base title="案例作品" description="業順營造過往的室內裝修與營造案例，附完整施工進度記錄。">
+<Base heroImage={banner} title="案例作品" description="業順營造過往的室內裝修與營造案例，附完整施工進度記錄。">
   <section class="page-hero">
-    <div class="page-hero__bg" aria-hidden="true"><img src={u('/images/stage-site.webp')} alt="" fetchpriority="high" decoding="async" /></div>
+    <div class="page-hero__bg" aria-hidden="true"><img src={banner} alt="" fetchpriority="high" /></div>
     <div class="container">
       <p class="eyebrow">PROJECTS</p>
       <h1 class="h-display">案例作品</h1>
