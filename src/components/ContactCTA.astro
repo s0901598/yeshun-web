@@ -21,8 +21,13 @@ const { closingQuote, closingText } = await getSettings();
   .cta__quote {
     max-width: 22em; margin: 8px auto 0;
     font-size: clamp(24px, 3.4vw, 38px); font-weight: 700; line-height: 1.5; color: var(--text);
+    white-space: pre-line; /* 後台按 Enter 的換行照著分行 */
   }
   .cta__text { max-width: 36em; margin: 20px auto 0; font-size: clamp(18px, 1.8vw, 20px); color: var(--text-2); }
   .cta__btn { margin-top: 36px; }
-  @media (max-width: 767px) { .cta__btn { width: 100%; } }
+  @media (max-width: 767px) {
+    /* 手機：字級跟著螢幕寬度縮，讓一行約 15 個字（含「）不會被折成兩行 */
+    .cta__quote { font-size: min(24px, calc((100vw - var(--gutter) * 2) / 15.5)); }
+    .cta__btn { width: 100%; }
+  }
 </style>

@@ -197,7 +197,7 @@ export default function Companies() {
 
         <h4 class="a-subhead">結語</h4>
         <p class="a-hint">顯示在：每一頁最下方（聯絡頁除外），和「預約諮詢」按鈕一起。</p>
-        <RichField label="引言" value={settings.closing_quote} onInput={setV('closing_quote')} hint="不用加「」，官網會自動加上" />
+        <RichField label="引言" multiline rows={2} value={settings.closing_quote} onInput={setV('closing_quote')} hint="不用加「」，官網會自動加上。按 Enter 換行，官網會照著分行" />
         <RichField label="結語" value={settings.closing_text} onInput={setV('closing_text')} />
       </div>
 
