@@ -147,7 +147,7 @@ export default function Companies() {
           about_intro: lines(settings.about_intro).join('\n'),
           about_features: settings.about_features.map((f) => ({ title: f.title.trim(), lead: (f.lead ?? '').trim(), body: f.body.trim() })).filter((f) => f.title || f.body),
           about_services: lines(settings.about_services),
-          closing_quote: settings.closing_quote.trim().replace(/^「|」$/g, ''), closing_text: settings.closing_text.trim(),
+          closing_quote: settings.closing_quote.trim(), closing_text: settings.closing_text.trim(),
         }).eq('id', 1));
       }
       await load();
@@ -197,7 +197,7 @@ export default function Companies() {
 
         <h4 class="a-subhead">結語</h4>
         <p class="a-hint">顯示在：每一頁最下方（聯絡頁除外），和「預約諮詢」按鈕一起。</p>
-        <RichField label="引言" multiline rows={2} value={settings.closing_quote} onInput={setV('closing_quote')} hint="不用加「」，官網會自動加上。按 Enter 換行，官網會照著分行" />
+        <RichField label="引言" multiline rows={2} value={settings.closing_quote} onInput={setV('closing_quote')} hint="官網照這裡打的字顯示（要引號就自己打「」）。按 Enter 換行，官網會照著分行" />
         <RichField label="結語" value={settings.closing_text} onInput={setV('closing_text')} />
       </div>
 

@@ -9,7 +9,7 @@ const { closingQuote, closingText } = await getSettings();
 <section class="cta section">
   <div class="container cta__inner reveal">
     <p class="eyebrow">OUR PROMISE</p>
-    {closingQuote && <blockquote class="cta__quote" set:html={`「${richHtml(closingQuote)}」`} />}
+    {closingQuote && <blockquote class="cta__quote" set:html={richHtml(closingQuote)} />}
     {closingText && <p class="cta__text" set:html={richHtml(closingText)} />}
     <a href={u('/contact')} class="btn btn--primary cta__btn">預約諮詢 <span class="arrow">→</span></a>
   </div>
@@ -26,8 +26,8 @@ const { closingQuote, closingText } = await getSettings();
   .cta__text { max-width: 36em; margin: 20px auto 0; font-size: clamp(18px, 1.8vw, 20px); color: var(--text-2); }
   .cta__btn { margin-top: 36px; }
   @media (max-width: 767px) {
-    /* 手機：字級跟著螢幕寬度縮，讓一行約 15 個字（含「）不會被折成兩行 */
-    .cta__quote { font-size: min(24px, calc((100vw - var(--gutter) * 2) / 15.5)); }
+    /* 手機：字級跟著螢幕寬度縮，讓一行約 14 個字不會被折成兩行 */
+    .cta__quote { font-size: min(24px, calc((100vw - var(--gutter) * 2) / 14.5)); }
     .cta__btn { width: 100%; }
   }
 </style>

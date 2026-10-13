@@ -83,7 +83,7 @@
 - **跟著系統設定**（2026-10-13 起）：訪客沒選過就照手機／電腦的深淺色，系統沒設定時是淺色；按過頁首 ☀/☾ 按鈕就用他選的，網站會記住（localStorage 的 `yeshun-theme`），按上一頁回去也會套用新選的顏色。後台同樣規則。
 - 淺色＝純白底＋金（不能是米色／咖啡色）；深色＝黑配金。淺色模式的頁首底圖是彩色。
 - 要全站固定淺色、拿掉切換鈕：把 `src/data/site.ts` 的 `darkModeEnabled` 改成 `false`。
-- 每一頁最下方的結語＋「預約諮詢」按鈕在 `src/components/ContactCTA.astro`，文字來自後台（聯絡頁不放）。引言可在後台按 Enter 分行，官網照著分行（white-space: pre-line）；手機字級隨螢幕寬度縮小，讓一行約 15 字不會被折行。
+- 每一頁最下方的結語＋「預約諮詢」按鈕在 `src/components/ContactCTA.astro`，文字來自後台（聯絡頁不放）。引言照後台打的字顯示（官網不自動加「」，存檔也不刪），可按 Enter 分行，官網照著分行（white-space: pre-line）；手機字級隨螢幕寬度縮小，讓一行約 14 字不會被折行。
 - 顏色都定義在 `src/styles/global.css` 開頭：`:root` 是深色，`:root[data-theme='light']` 是淺色。
 - 金色分兩種：`--gold` 用在線條和按鈕（兩種模式一樣），`--gold-text` 用在文字（淺色模式較深）。
 

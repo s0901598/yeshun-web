@@ -240,7 +240,7 @@ check(await toastHas(p, '已全部儲存'), 'about page content saved');
 const { data: ab } = await svc.from('site_settings').select(aboutCols).eq('id', 1).single();
 check(ab.about_features.length === newNo && ab.about_features[0].title === 'E2E 特色標題' && ab.about_features[newNo - 2].title === 'E2E 新增格',
   'feature edited, added and moved up');
-check(ab.closing_quote === 'E2E 引言', 'quote saved without 「」');
+check(ab.closing_quote === '「E2E 引言」', 'quote saved as typed (「」 kept)');
 check(ab.about_title === 'E2E 頁面名稱', 'page name saved');
 check(JSON.stringify(ab.about_services) === JSON.stringify(origAbout.about_services), 'unchanged services kept as list');
 await svc.from('site_settings').update(origAbout).eq('id', 1);
