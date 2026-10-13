@@ -37,7 +37,7 @@
 | `npm run dev` | 本機開發，網址 http://localhost:4321 |
 | `npm run build` | 打包到 `dist/` |
 | `npm run preview` | 預覽打包結果，網址 http://localhost:4321/yeshun-web/ |
-| `npm run verify` | 完整驗證（Chrome＋iPhone Safari 核心 × 手機/平板/電腦 × 淺色/深色（預設淺色），含開選單、Logo 對齊、主題切換與換頁／上一頁、看大圖、篩選、舊網址轉址）。先執行 `npm run preview`；也可以加網址測線上版：`npm run verify -- https://s0901598.github.io/yeshun-web` |
+| `npm run verify` | 完整驗證（Chrome＋iPhone Safari 核心 × 手機/平板/電腦 × 淺色/深色（跟著系統），含開選單、Logo 對齊、主題切換與換頁／上一頁、看大圖、篩選、舊網址轉址）。先執行 `npm run preview`；也可以加網址測線上版：`npm run verify -- https://s0901598.github.io/yeshun-web` |
 | `npm run verify:admin` | 後台權限驗證（建立臨時編輯帳號測試權限，測完自動刪除）。需要本機 `.env` |
 | `npm run verify:flow` | 後台完整流程驗證（新增案例、階段、照片、儲存、預覽、發布、下架、刪除、公司資料），會自己建立並刪除測試資料，發布呼叫會被攔截不會更新官網。需要 `.env` |
 | `npm run deploy` | 手動觸發 GitHub Actions 重新部署官網 |
@@ -55,13 +55,19 @@
 | `/details` | 我們注重的細節 |
 | `/process` | 服務流程：時間軸跟著捲動畫出，步驟依序亮起 |
 | `/contact` | 聯絡我們：聯絡方式、需求表單、地圖 |
+| `/privacy` | 隱私權政策（Cookie 提示裡的連結，頁尾也有） |
+
+- 「注重的細節」`/details` 目前隱藏（業主覺得名稱不夠專業）：選單、頁尾、首頁區塊都不顯示，網址轉回首頁；後台內容保留。`src/data/site.ts` 的 `detailsEnabled` 改成 `true` 就恢復。
+- 案例頁的返回鈕是「回案例列表」；站內按上一頁只退一層。
 
 ## 要改內容去哪裡
 | 內容 | 在哪裡改 |
 |---|---|
 | 案例、施工進度、照片、注重的細節、服務流程 | 後台 `/admin/` |
 | 兩家公司介紹、登記字號、登記證照片、電話、LINE、地址、營業時間、首頁數據 | 後台「公司資料」 |
-| 首頁標語、選單 | `src/data/site.ts` |
+| 各頁頂端底圖 | 後台「公司資料 → 各頁頂端底圖」（沒上傳時用 `site.ts` 的 `defaultBanners` 內建照） |
+| 客戶從聯絡表單送出的需求 | 後台「客戶需求」（處理完移到「已處理」分頁） |
+| 首頁標語、選單、功能開關 | `src/data/site.ts` |
 
 - 標了 `todo: true` 的欄位是示意內容，頁面上會顯示橘色「待補」標籤。
 - 全部換成真實資料後，把 `src/data/site.ts` 的 `showTodo` 改成 `false`，所有「待補」標籤就會消失。
@@ -72,11 +78,26 @@
 - 官網讀資料的入口只有 `src/lib/data.ts`。
 
 ## 淺色／深色模式
-- **預設淺色**（業主希望以淺色為主），不跟隨系統設定；頁首 ☀/☾ 按鈕可以切換深色，網站會記住選擇，按上一頁回去也會套用新選的顏色。
+- **跟著系統設定**（2026-10-13 起）：訪客沒選過就照手機／電腦的深淺色，系統沒設定時是淺色；按過頁首 ☀/☾ 按鈕就用他選的，網站會記住（localStorage 的 `yeshun-theme`），按上一頁回去也會套用新選的顏色。後台同樣規則。
+- 淺色＝純白底＋金（不能是米色／咖啡色）；深色＝黑配金。淺色模式的頁首底圖是彩色。
 - 要全站固定淺色、拿掉切換鈕：把 `src/data/site.ts` 的 `darkModeEnabled` 改成 `false`。
 - 每一頁最下方的結語＋「預約諮詢」按鈕在 `src/components/ContactCTA.astro`，文字來自後台（聯絡頁不放）。
 - 顏色都定義在 `src/styles/global.css` 開頭：`:root` 是深色，`:root[data-theme='light']` 是淺色。
 - 金色分兩種：`--gold` 用在線條和按鈕（兩種模式一樣），`--gold-text` 用在文字（淺色模式較深）。
+
+## 進站 Loading
+- 每個分頁第一次打開官網、或按重新整理時出現；站內換頁、上一頁不出現（看過的紀錄存在 sessionStorage）。
+- 畫面是「藍圖繪製」：Logo 線條一筆一筆畫出（咖啡金、筆尖帶光），約 3 秒畫完，網路慢也不超過 3 秒。
+- 從首頁網址進來或按重新整理，畫完後回到「案例作品」頁最上方。
+- 程式在 `src/components/Loader.astro`；`site.ts` 的 `loaderEnabled` 改成 `false` 就關閉。
+
+## 聯絡表單
+- 聯絡頁表單送出 → Supabase 函式 `submit-inquiry` → 存進資料表 `inquiries`（後台「客戶需求」看得到）＋用 Resend 寄 Email 通知。
+- 需要在 Supabase → Edge Functions → Secrets 設定 `RESEND_API_KEY` 與 `INQUIRY_TO`（收信信箱）；寄件人目前是 `onboarding@resend.dev`，買網域後再換。
+
+## Cookie 提示與隱私權政策
+- 2026-10-13 業主確認上線：第一次進站下方出現 Cookie 提示，連到 `/privacy`；頁尾也有「隱私權政策」連結。
+- `site.ts` 的 `cookieNoticeEnabled` 改成 `false` 就關閉（提示與頁尾連結一起拿掉）。
 
 ## RWD 斷點
 | 裝置 | 寬度 | 版面 |
@@ -84,6 +105,8 @@
 | 手機 | < 768px | 單欄、漢堡選單、案例與照片可左右滑、底部固定聯絡列 |
 | 平板 | 768–1199px | 雙欄、漢堡選單、底部固定聯絡列 |
 | 電腦 | ≥ 1200px | 完整橫向選單、多欄版面 |
+
+- 手機畫面左右鎖住，不會拉出彈跳空白（保留上下捲動與雙指縮放）。
 
 ## 下一步
 1. 換上真實內容（公司資料、登記字號、Logo、真實案例照片）
