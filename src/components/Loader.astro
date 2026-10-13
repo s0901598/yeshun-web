@@ -1,7 +1,7 @@
 ---
 // 進站 Loading：每個分頁第一次打開官網、或按重新整理時出現（在官網裡換頁、上一頁不出現）。
-// 方案 A「藍圖繪製」：業順 Logo 的線條像建築師畫圖一樣一筆一筆畫出，旁邊的尺寸標註線跟著延伸（咖啡金）。
-// 進度依實際載入，最少 1.5 秒、最多 3 秒。
+// 方案 A「藍圖繪製」：業順 Logo 的線條像建築師畫圖一樣一筆一筆畫出（咖啡金），畫線的筆尖帶一點光。
+// 每次約 3 秒畫完（網路慢也不超過 3 秒）。
 // 從首頁網址進來、或在任何一頁按重新整理時，100% 後回到預設的「案例作品」頁最上方。
 import { u } from '../lib/url';
 
@@ -20,18 +20,17 @@ const homePath = u('/');
 ---
 <div class="loader" id="site-loader" role="status" aria-live="polite" aria-label="網站載入中">
   <div class="loader__inner">
-    <svg class="loader__logo" id="loader-svg" viewBox="-30 -20 300 225" aria-hidden="true">
+    <svg class="loader__logo" id="loader-svg" viewBox="-6 -6 252 186" aria-hidden="true">
+      <defs>
+        <filter id="loader-glow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="1.4" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+      </defs>
       <!-- 依序畫出：外框三塊 → 條紋 -->
       <g class="loader__lines">
         <path d={left} data-draw /><path d={right} data-draw /><path d={base} data-draw />
         {stripes.map((d) => <path class="loader__stripe" d={d} data-draw />)}
-      </g>
-      <!-- 尺寸標註：底部寬度、右側高度 -->
-      <g class="loader__dim">
-        <path id="loader-dim-w" />
-        <path id="loader-dim-h" />
-        <text id="loader-dim-wt" x="120" y="196" text-anchor="middle"></text>
-        <text id="loader-dim-ht" x="258" y="80" text-anchor="middle" transform="rotate(90 258 80)"></text>
       </g>
     </svg>
     <p class="loader__pct mono"><span id="loader-pct">000</span>%</p>
@@ -45,15 +44,13 @@ const homePath = u('/');
     var el = document.getElementById('site-loader');
     var svg = document.getElementById('loader-svg');
     var pct = document.getElementById('loader-pct');
-    var dimW = document.getElementById('loader-dim-w'), dimH = document.getElementById('loader-dim-h');
-    var dimWt = document.getElementById('loader-dim-wt'), dimHt = document.getElementById('loader-dim-ht');
     var paths = Array.prototype.slice.call(el.querySelectorAll('[data-draw]'));
     var lens = paths.map(function (p) { var l = p.getTotalLength(); p.style.strokeDasharray = l; p.style.strokeDashoffset = l; return l; });
     var isHome = location.pathname === homePath || location.pathname === homePath + 'index.html';
     var onProjects = location.pathname === projectsUrl || location.pathname === projectsUrl + 'index.html';
     // 首頁網址、或重新整理（不在案例作品頁時）→ 載完跳到案例作品
     var goProjects = isHome || (window.__yeshunReload && !onProjects);
-    var start = performance.now(), MIN = 1500, MAX = 3000, shown = 0, done = false;
+    var start = performance.now(), MIN = 2800, MAX = 3000, shown = 0, done = false;
     var ease = function (t) { return 1 - Math.pow(1 - t, 3); };
     var clamp = function (v) { return Math.max(0, Math.min(1, v)); };
     // 實際載入進度：頁面上的圖片＋整頁 load；要跳到案例作品時也先在背景載入那一頁
@@ -67,16 +64,14 @@ const homePath = u('/');
     };
     if (goProjects) fetch(projectsUrl, { credentials: 'same-origin' }).then(function (r) { return r.text(); })
       .finally(function () { window.__projectsReady = true; });
-    // 依進度畫圖：每條線輪流畫出，尺寸線同時延伸，100% 時整個 Logo 輕輕發光
+    // 依進度畫圖：每條線輪流畫出，正在畫的那條帶光，100% 時整個 Logo 亮一下
     var draw = function (p) {
       var n = paths.length;
-      paths.forEach(function (path, i) { path.style.strokeDashoffset = lens[i] * (1 - ease(clamp((p * 1.15 - i / n * 0.75) / 0.4))); });
-      var wp = ease(clamp(p / 0.8)), x0 = 120 - 118 * wp, x1 = 120 + 118 * wp;
-      dimW.setAttribute('d', 'M' + x0 + ' 184 L' + x1 + ' 184 M' + x0 + ' 180 L' + x0 + ' 188 M' + x1 + ' 180 L' + x1 + ' 188');
-      var hp = ease(clamp((p - 0.15) / 0.8)), yb = 172 - 166 * hp;
-      dimH.setAttribute('d', 'M252 172 L252 ' + yb + ' M248 172 L256 172 M248 ' + yb + ' L256 ' + yb);
-      dimWt.textContent = p > 0.05 ? 'W ' + Math.round(2400 * wp) : '';
-      dimHt.textContent = p > 0.2 ? 'H ' + Math.round(1660 * hp) : '';
+      paths.forEach(function (path, i) {
+        var s = clamp((p * 1.15 - i / n * 0.75) / 0.4);
+        path.style.strokeDashoffset = lens[i] * (1 - ease(s));
+        path.classList.toggle('is-drawing', s > 0 && s < 1);
+      });
       svg.classList.toggle('is-complete', p >= 1);
       pct.textContent = ('00' + Math.round(p * 100)).slice(-3);
     };
@@ -91,12 +86,12 @@ const homePath = u('/');
     };
     var tick = function (now) {
       var t = now - start;
-      // 顯示的進度不超過時間進度（至少 1.5 秒）；2.5 秒起直接衝到 100%，3 秒時一定完成
-      var target = t >= MAX - 500 ? 1 : Math.min(real(), t / MIN);
-      shown += (target - shown) * 0.2;
+      // 顯示的進度跟著時間走（約 3 秒畫完），網路還沒載完時會稍微等一下，但 3 秒一定完成
+      var target = t >= MAX ? 1 : Math.min(real(), t / MIN);
+      shown += (target - shown) * 0.25;
       if ((target === 1 && shown > 0.995) || t >= MAX) shown = 1;
       draw(shown);
-      if (shown >= 1) setTimeout(finish, 250); else requestAnimationFrame(tick);
+      if (shown >= 1) setTimeout(finish, 150); else requestAnimationFrame(tick);
     };
     draw(0);
     requestAnimationFrame(tick);
@@ -113,11 +108,11 @@ const homePath = u('/');
   :global(html.is-loading) body { overflow: hidden; }
   .loader.is-done { opacity: 0; }
   .loader__inner { display: grid; justify-items: center; gap: 14px; }
-  .loader__logo { width: min(56vw, 260px); height: auto; overflow: visible; transition: filter .4s ease; }
-  .loader__logo.is-complete { filter: drop-shadow(0 0 6px rgba(148, 112, 58, .55)); }
-  .loader__lines { fill: none; stroke: var(--loader-gold); stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
-  .loader__stripe { stroke-width: 1.1; }
-  .loader__dim { fill: none; stroke: var(--loader-gold); stroke-width: .8; opacity: .75; }
-  .loader__dim text { fill: var(--loader-gold); stroke: none; font-size: 9px; letter-spacing: .1em; font-family: var(--font-mono); }
-  .loader__pct { font-size: 15px; letter-spacing: .24em; color: var(--loader-gold); }
+  .loader__logo { width: min(52vw, 230px); height: auto; overflow: visible; transition: filter .4s ease; }
+  .loader__logo.is-complete { filter: drop-shadow(0 0 10px rgba(148, 112, 58, .65)); }
+  /* 線條加粗，正在畫的那一筆帶光，看起來更鮮明 */
+  .loader__lines { fill: none; stroke: var(--loader-gold); stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; }
+  .loader__stripe { stroke-width: 1.8; }
+  .loader__lines .is-drawing { filter: url(#loader-glow); }
+  .loader__pct { font-size: 18px; font-weight: 500; letter-spacing: .24em; color: var(--loader-gold); }
 </style>

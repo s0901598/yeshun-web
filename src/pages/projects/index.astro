@@ -81,7 +81,7 @@ const banner = bannerSettings.pageBanner('projects');
 <style>
   .filters {
     display: flex; gap: 8px; margin-bottom: 32px;
-    overflow-x: auto; scrollbar-width: none;
+    overflow-x: auto; scrollbar-width: none; touch-action: pan-x pan-y; /* 分類列可以左右滑（整頁不行） */
     margin-left: calc(var(--gutter) * -1); margin-right: calc(var(--gutter) * -1);
     padding: 0 var(--gutter);
   }

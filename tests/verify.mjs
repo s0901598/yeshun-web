@@ -25,6 +25,8 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
       await p.goto(B + path, { waitUntil: 'networkidle' });
       checks++;
       const ov = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+      // 畫面左右鎖住：硬要往右捲也捲不動
+      checks++; if (await p.evaluate(() => { scrollTo(200, scrollY); const x = scrollX; scrollTo(0, scrollY); return x; }) !== 0) bad(`${tag}: page can scroll sideways`);
       if (ov > 0) bad(`${tag}: horizontal overflow ${ov}px`);
       const broken = await p.evaluate(async () => {
         const imgs = [...document.images].filter((i) => i.getAttribute('src'));
@@ -183,7 +185,7 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
     await lp.waitForURL(/\/projects\/$/, { timeout: 6000 }).catch(() => {});
     const took = Date.now() - t0;
     checks++; if (!/\/projects\/$/.test(lp.url())) bad(`${name}/${w}/${theme}: loader did not go to 案例作品 (${lp.url()})`);
-    checks++; if (took > 4200) bad(`${name}/${w}/${theme}: loader took ${took}ms (limit 3s + page load)`);
+    checks++; if (took > 5200) bad(`${name}/${w}/${theme}: loader took ${took}ms (limit: 3s 動畫 + 頁面載入與跳轉)`);
     await lp.waitForLoadState('load');
     checks++; if (await lp.evaluate(() => document.documentElement.classList.contains('is-loading'))) bad(`${name}/${w}/${theme}: loader shown again on 案例作品`);
     // 重新整理：Loading 要再出現（在案例作品頁重新整理，完成後留在原頁）
