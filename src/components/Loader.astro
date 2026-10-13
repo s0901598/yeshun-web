@@ -1,0 +1,103 @@
+---
+// 進站 Loading：每次打開官網只出現一次（同一個分頁換頁不再出現）。
+// 業順 Logo 線條版，金色海浪從下往上填滿；進度依實際載入，最少 1.5 秒、最多 3 秒。
+// 從首頁網址進來時，100% 後直接跳到「案例作品」頁。
+import { u } from '../lib/url';
+
+// Logo 線條（依 public/images/logo-mark.png 重畫，viewBox 240×173）
+const left = 'M20 28 L118 6 L118 150 L20 118 Z';
+const right = 'M118 6 L215 24 L215 120 L118 150 Z';
+const base = 'M2 122 L20 118 L118 150 L215 120 L238 122 L120 172 Z'; // 上緣和大樓底邊共用，填滿時中間不會留縫
+const yTopL = (x: number) => 28 - (22 / 98) * (x - 20), yBotL = (x: number) => 118 + (32 / 98) * (x - 20);
+const yTopR = (x: number) => 6 + (18 / 97) * (x - 118), yBotR = (x: number) => 150 - (30 / 97) * (x - 118);
+const stripes = [
+  ...[34, 47, 60, 73, 86, 100].map((x) => [x, yTopL(x) + 4, x, yBotL(x) - 4]),
+  ...[134, 147, 160, 173, 186, 200].map((x) => [x, yTopR(x) + 4, x, yBotR(x) - 4]),
+];
+const projectsUrl = u('/projects/');
+const homePath = u('/');
+---
+<div class="loader" id="site-loader" role="status" aria-live="polite" aria-label="網站載入中">
+  <div class="loader__inner">
+    <svg class="loader__logo" viewBox="0 0 240 173" aria-hidden="true">
+      <defs>
+        <clipPath id="loader-clip"><path d={left} /><path d={right} /><path d={base} /></clipPath>
+      </defs>
+      <!-- 海浪：兩層波浪左右流動，整體依進度往上升 -->
+      <g clip-path="url(#loader-clip)">
+        <g class="loader__rise" id="loader-rise">
+          <path class="loader__wave loader__wave--back" d="M0 10 Q30 0 60 10 T120 10 T180 10 T240 10 T300 10 T360 10 T420 10 T480 10 V300 H0 Z" />
+          <path class="loader__wave" d="M0 10 Q30 20 60 10 T120 10 T180 10 T240 10 T300 10 T360 10 T420 10 T480 10 V300 H0 Z" />
+        </g>
+      </g>
+      <g class="loader__lines">
+        <path d={left} /><path d={right} /><path d={base} />
+        {stripes.map(([x1, y1, x2, y2]) => <line x1={x1} y1={y1} x2={x2} y2={y2} />)}
+      </g>
+    </svg>
+    <p class="loader__pct mono"><span id="loader-pct">0</span>%</p>
+  </div>
+</div>
+
+<script is:inline define:vars={{ projectsUrl, homePath }}>
+  (function () {
+    var root = document.documentElement;
+    if (!root.classList.contains('is-loading')) return;
+    var el = document.getElementById('site-loader');
+    var rise = document.getElementById('loader-rise');
+    var pct = document.getElementById('loader-pct');
+    var isHome = location.pathname === homePath || location.pathname === homePath + 'index.html';
+    var start = performance.now(), MIN = 1500, MAX = 3000, shown = 0, done = false;
+    // 實際載入進度：頁面上的圖片＋整頁 load；從首頁進來時也先在背景載入案例作品頁
+    var real = function () {
+      var imgs = Array.prototype.filter.call(document.images, function (i) { return i.loading !== 'lazy'; });
+      var ok = imgs.filter(function (i) { return i.complete; }).length;
+      var p = imgs.length ? ok / imgs.length : 1;
+      if (document.readyState !== 'complete') p = Math.min(p, 0.9);
+      if (isHome && !window.__projectsReady) p = Math.min(p, 0.95);
+      return p;
+    };
+    if (isHome) fetch(projectsUrl, { credentials: 'same-origin' }).then(function (r) { return r.text(); })
+      .finally(function () { window.__projectsReady = true; });
+    var finish = function () {
+      if (done) return; done = true;
+      try { sessionStorage.setItem('yeshun-loaded', '1'); } catch (e) {}
+      if (!/(?:^|;)yeshun-loaded=1/.test(window.name)) window.name += ';yeshun-loaded=1';
+      if (isHome) { location.replace(projectsUrl); return; }
+      el.classList.add('is-done');
+      setTimeout(function () { root.classList.remove('is-loading'); el.remove(); }, 500);
+    };
+    var tick = function (now) {
+      var t = now - start;
+      // 顯示的進度不超過時間進度（至少 1.5 秒），超過 3 秒直接完成
+      var target = t >= MAX ? 1 : Math.min(real(), t / MIN);
+      shown += (target - shown) * 0.18;
+      if (target === 1 && shown > 0.995) shown = 1;
+      // 波浪從 Logo 底部（y≈172）升到頂部（y≈-6）
+      rise.setAttribute("transform", "translate(0 " + (172 - shown * 190).toFixed(1) + ")");
+      pct.textContent = Math.round(shown * 100);
+      if (shown >= 1) setTimeout(finish, 250); else requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  })();
+</script>
+
+<style>
+  /* Logo 外框、海浪、百分比都用同一個顏色（目前試用香檳金；要換咖啡金改成 #94703a） */
+  .loader { display: none; --loader-gold: #c3a27f; }
+  :global(html.is-loading) .loader {
+    position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center;
+    background: var(--bg); transition: opacity .5s ease;
+  }
+  :global(html.is-loading) body { overflow: hidden; }
+  .loader.is-done { opacity: 0; }
+  .loader__inner { display: grid; justify-items: center; gap: 18px; }
+  .loader__logo { width: min(46vw, 220px); height: auto; overflow: visible; }
+  /* 外框和海浪同一個咖啡金，填滿後整個 Logo 是同一個顏色、沒有白框 */
+  .loader__lines { fill: none; stroke: var(--loader-gold); stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; }
+  .loader__wave { fill: var(--loader-gold); animation: loader-wave 1.6s linear infinite; }
+  .loader__wave--back { opacity: .45; animation-duration: 2.4s; animation-direction: reverse; }
+  @keyframes loader-wave { from { transform: translateX(0); } to { transform: translateX(-120px); } }
+  .loader__pct { font-size: 15px; letter-spacing: .2em; color: var(--loader-gold); }
+  @media (prefers-reduced-motion: reduce) { .loader__wave { animation: none; } }
+</style>

@@ -1,0 +1,45 @@
+---
+// Cookie 聲明：第一次進站顯示在畫面底部，按「我知道了」後不再出現（記在 localStorage；被封鎖時記在分頁的 window.name）
+import { u } from '../lib/url';
+---
+<div class="cookie" id="cookie-notice" role="region" aria-label="Cookie 聲明" hidden>
+  <p class="cookie__text">本網站使用 Cookie 與類似技術，用來記住您的偏好設定並提供地圖服務。<a href={u('/privacy')}>隱私權政策</a></p>
+  <button type="button" class="btn btn--primary cookie__ok" data-cookie-ok>我知道了</button>
+</div>
+
+<script is:inline>
+  (function () {
+    var KEY = 'yeshun-cookie-ok';
+    var seen = /(?:^|;)yeshun-cookie-ok=1/.test(window.name);
+    try { seen = seen || localStorage.getItem(KEY) === '1'; } catch (e) {}
+    if (seen) return;
+    var box = document.getElementById('cookie-notice');
+    box.hidden = false;
+    box.querySelector('[data-cookie-ok]').addEventListener('click', function () {
+      try { localStorage.setItem(KEY, '1'); } catch (e) {}
+      window.name += ';yeshun-cookie-ok=1';
+      box.classList.add('is-leaving');
+      setTimeout(function () { box.hidden = true; }, 300);
+    });
+  })();
+</script>
+
+<style>
+  .cookie {
+    position: fixed; z-index: 95; left: 12px; right: 12px;
+    bottom: calc(64px + 12px + env(safe-area-inset-bottom)); /* 手機底部有快速聯絡列，提示放在它上面 */
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px;
+    padding: 16px 18px; background: var(--surface); color: var(--text);
+    border: 1px solid var(--line-strong); border-top: 3px solid var(--gold); box-shadow: 0 12px 34px rgba(0, 0, 0, .18);
+    transition: opacity .3s, transform .3s;
+  }
+  .cookie[hidden] { display: none; }
+  .cookie.is-leaving { opacity: 0; transform: translateY(12px); }
+  .cookie__text { flex: 1 1 260px; font-size: 15px; line-height: 1.7; color: var(--text-2); }
+  .cookie__text a { color: var(--gold-text); text-decoration: underline; text-underline-offset: 3px; margin-left: 6px; white-space: nowrap; }
+  .cookie__ok { min-height: 44px; padding: 0 24px; }
+  @media (max-width: 479px) { .cookie__ok { width: 100%; } }
+  @media (min-width: 1200px) {
+    .cookie { left: auto; right: 24px; bottom: 24px; max-width: 560px; }
+  }
+</style>

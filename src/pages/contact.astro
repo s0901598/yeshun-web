@@ -6,6 +6,9 @@ import { categoryLabels } from '../data/projects';
 import { getSettings } from '../lib/data';
 
 const settings = await getSettings();
+// 表單送到 Supabase 函式 submit-inquiry：存進後台「客戶需求」並寄 Email 通知
+const submitUrl = `${import.meta.env.PUBLIC_SUPABASE_URL}/functions/v1/submit-inquiry`;
+const submitKey = import.meta.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 // 後台沒填的聯絡方式不顯示
 const channels = [
   { en: 'PHONE', label: '電話', value: settings.phone, href: settings.phoneHref },
@@ -15,7 +18,7 @@ const channels = [
 ---
 <Base title="聯絡我們" description="營造工程、室內裝修諮詢與丈量預約，電話、LINE、Email 皆可聯絡。">
   <section class="page-hero">
-    <div class="page-hero__bg" aria-hidden="true"><img src={u('/images/detail-tools.webp')} alt="" /></div>
+    <div class="page-hero__bg" aria-hidden="true"><img src={u('/images/detail-tools.webp')} alt="" fetchpriority="high" decoding="async" /></div>
     <div class="container">
       <p class="eyebrow">CONTACT</p>
       <h1 class="h-display">聯絡我們</h1>
@@ -47,10 +50,12 @@ const channels = [
         )}
       </div>
 
-      <!-- 需求表單（送出功能之後接資料庫） -->
-      <form class="form reveal" data-form novalidate>
+      <!-- 需求表單：送出後存進後台「客戶需求」並寄 Email 通知 -->
+      <form class="form reveal" data-form data-url={submitUrl} data-key={submitKey} novalidate>
         <p class="eyebrow">INQUIRY FORM</p>
-        <h2 class="form__title">需求諮詢表單<Todo label="送出功能待接資料庫" /></h2>
+        <h2 class="form__title">需求諮詢表單</h2>
+        <!-- 機器人陷阱：畫面上看不到，人不會填 -->
+        <label class="form__trap" aria-hidden="true">網站<input name="website" type="text" tabindex="-1" autocomplete="off" /></label>
 
         <div class="row">
           <label class="field">
@@ -106,20 +111,32 @@ const channels = [
 </Base>
 
 <script>
-  // 表單暫時只做前端檢查；送出功能會在接上 Supabase 後完成
+  // 送出：檢查必填 → 送到後台（存檔＋寄 Email）→ 顯示結果。失敗時請客戶改用電話或 LINE
   const form = document.querySelector<HTMLFormElement>('[data-form]')!;
   const msg = form.querySelector<HTMLElement>('[data-form-msg]')!;
-  form.addEventListener('submit', (e) => {
+  const btn = form.querySelector<HTMLButtonElement>('.form__submit')!;
+  const show = (text: string, state: 'error' | 'info' | 'ok') => { msg.textContent = text; msg.dataset.state = state; };
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const name = (form.elements.namedItem('name') as HTMLInputElement).value.trim();
-    const phone = (form.elements.namedItem('phone') as HTMLInputElement).value.trim();
-    if (!name || !phone) {
-      msg.textContent = '請填寫姓名與電話。';
-      msg.dataset.state = 'error';
-      return;
+    const data = Object.fromEntries(new FormData(form).entries()) as Record<string, string>;
+    if (!data.name?.trim() || !data.phone?.trim()) return show('請填寫姓名與電話。', 'error');
+    if ((data.phone.match(/\d/g) ?? []).length < 6) return show('電話號碼好像不完整，請再確認一下。', 'error');
+    btn.disabled = true; show('送出中…', 'info');
+    try {
+      const res = await fetch(form.dataset.url!, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: form.dataset.key!, Authorization: `Bearer ${form.dataset.key}` },
+        body: JSON.stringify(data),
+      });
+      if (res.status === 429) { show('您剛剛已經送出過了，我們收到後會儘快與您聯繫。', 'info'); return; }
+      if (!res.ok) throw new Error(String(res.status));
+      form.reset();
+      show('已收到您的需求，我們會在一個工作天內與您聯繫，謝謝！', 'ok');
+    } catch {
+      show('送出時發生問題，請稍後再試，或直接用電話、LINE 與我們聯絡。', 'error');
+    } finally {
+      btn.disabled = false;
     }
-    msg.textContent = '表單功能建置中，請先用電話或 LINE 與我們聯絡。';
-    msg.dataset.state = 'info';
   });
 </script>
 
@@ -164,6 +181,9 @@ const channels = [
   .form__msg { font-size: 16px; min-height: 1.5em; }
   .form__msg[data-state='error'] { color: var(--danger); }
   .form__msg[data-state='info'] { color: var(--gold-text); }
+  .form__msg[data-state='ok'] { color: var(--gold-text); font-weight: 700; }
+  .form__trap { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .form__submit:disabled { opacity: .6; cursor: wait; }
 
   .map { border-top: 1px solid var(--line); }
   .map iframe { display: block; width: 100%; height: 320px; border: 0; }

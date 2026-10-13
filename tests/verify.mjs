@@ -1,16 +1,22 @@
 // 完整驗證：Chromium + WebKit × 手機/平板/電腦 × 淺色/深色（預設淺色，深色是訪客自己切換）× 所有頁面，含互動狀態
 import { chromium, webkit } from 'playwright';
 const B = process.argv[2] ?? 'http://localhost:4321/yeshun-web';
-const pages = ['/', '/about/', '/projects/', '/projects/luzhou-house/', '/process/', '/contact/']; // /details/ 目前隱藏（轉回首頁），另外測
+const pages = ['/', '/about/', '/projects/', '/projects/luzhou-house/', '/process/', '/contact/', '/privacy/']; // /details/ 目前隱藏（轉回首頁），另外測
 const sizes = [[390, 844, 'phone'], [820, 1180, 'tablet'], [1440, 900, 'desktop']];
 const problems = []; let checks = 0;
 const bad = (m) => problems.push(m);
 for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', () => webkit.launch()]]) {
   const b = await launch();
+  // 一般檢查：當作「這個分頁已經看過 Loading、也關過 Cookie 提示」，避免蓋住畫面；兩者另外專門測
+  const rawNewContext = b.newContext.bind(b);
+  b.newContext = async (opts, fresh = false) => {
+    const c = await rawNewContext(opts);
+    if (!fresh) await c.addInitScript(() => { try { sessionStorage.setItem('yeshun-loaded', '1'); localStorage.setItem('yeshun-cookie-ok', '1'); } catch {} });
+    return c;
+  };
   for (const scheme of ['dark', 'light']) for (const [w, h, dev] of sizes) {
-    // 系統設定故意跟網站相反：網站不跟隨系統。深色那一輪模擬「訪客按過切換鈕選了深色」
-    const ctx = await b.newContext({ viewport: { width: w, height: h }, colorScheme: scheme === 'dark' ? 'light' : 'dark', reducedMotion: 'reduce' });
-    if (scheme === 'dark') await ctx.addInitScript(() => { try { localStorage.setItem('yeshun-theme', 'dark'); } catch {} });
+    // 沒選過深淺色的訪客：跟著系統設定
+    const ctx = await b.newContext({ viewport: { width: w, height: h }, colorScheme: scheme, reducedMotion: 'reduce' });
     for (const path of pages) {
       const tag = `${name}/${dev}/${scheme}${path}`;
       const p = await ctx.newPage();
@@ -48,7 +54,7 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
       // 頁尾前：結語＋預約諮詢（聯絡頁除外），舊的「有裝修或營造的需求？」不能再出現
       const cta = await p.evaluate(() => ({ old: document.body.innerText.includes('有裝修或營造的需求'), quote: !!document.querySelector('.cta__quote'), btn: !!document.querySelector('.cta__btn') }));
       checks++; if (cta.old) bad(`${tag}: old CTA text still shown`);
-      if (path !== '/contact/') { checks++; if (!cta.quote || !cta.btn) bad(`${tag}: closing block missing ${JSON.stringify(cta)}`); }
+      if (path !== '/contact/' && path !== '/privacy/') { checks++; if (!cta.quote || !cta.btn) bad(`${tag}: closing block missing ${JSON.stringify(cta)}`); }
       // 互動：手機/平板打開選單，選單要完整、最後一個按鈕要看得到
       if (dev !== 'desktop' && path === '/') {
         for (const y of [0, 1200]) {
@@ -132,12 +138,21 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
     }
     await ctx.close();
   }
-  // 主題：沒選過一律淺色（系統是深色也一樣）；切換後換頁要保持；按上一頁回去也要是新選的顏色
-  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, colorScheme: 'dark' });
+  // 主題：沒選過→跟系統（系統沒設定＝淺色）；按過切換鈕→用選的，系統是什麼都一樣；換頁、上一頁、重新整理都保持
+  for (const [sys, want] of [['light', 'light'], ['dark', 'dark']]) { // 「系統沒設定」測不到（測試瀏覽器會沿用這台電腦的設定），由程式預設淺色處理
+    const c = await b.newContext({ viewport: { width: 390, height: 844 }, colorScheme: sys });
+    const pg = await c.newPage(); await pg.goto(B + '/about/', { waitUntil: 'load' });
+    checks++; if (await pg.evaluate(() => document.documentElement.dataset.theme) !== want) bad(`${name}: system ${sys} should show ${want}`);
+    await pg.click('[data-theme-btn]');
+    await pg.goto(B + '/projects/', { waitUntil: 'load' });
+    checks++; if (await pg.evaluate(() => document.documentElement.dataset.theme) === want) bad(`${name}: chosen theme not kept over system ${sys}`);
+    await c.close();
+  }
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, colorScheme: 'light' });
   const p = await ctx.newPage();
   const theme = () => p.evaluate(() => document.documentElement.dataset.theme);
   await p.goto(B + '/', { waitUntil: 'load' });
-  checks++; if (await theme() !== 'light') bad(`${name}: default not light on dark system`);
+  checks++; if (await theme() !== 'light') bad(`${name}: default not light on light system`);
   await p.click('[data-theme-btn]');
   checks++; if (await theme() !== 'dark') bad(`${name}: toggle did not switch to dark`);
   await p.goto(B + '/about/', { waitUntil: 'load' });
@@ -150,6 +165,88 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
   checks++; if (await theme() !== 'light') bad(`${name}: forward button shows old theme`);
   await p.reload({ waitUntil: 'load' });
   checks++; if (await theme() !== 'light') bad(`${name}: light not kept after reload`);
+  const homeHtml = await (await fetch(B + '/')).text();
+  const loaderOn = homeHtml.includes('id="site-loader"'), cookieOn = homeHtml.includes('id="cookie-notice"');
+  // 進站 Loading（開啟時才測）：從首頁網址進來 → Logo 填滿到 100% → 3 秒內跳到案例作品；同一個分頁再回首頁不再出現；
+  // 從其他頁進來 → Loading 完留在原頁。底色跟網站深淺色一致
+  if (loaderOn) for (const [w, h] of [[390, 844], [1440, 900]]) for (const theme of ['light', 'dark']) {
+    const lc = await b.newContext({ viewport: { width: w, height: h }, colorScheme: theme }, true);
+    await lc.addInitScript(() => { try { localStorage.setItem('yeshun-cookie-ok', '1'); } catch {} });
+    const lp = await lc.newPage(); const t0 = Date.now();
+    await lp.goto(B + '/', { waitUntil: 'commit' });
+    await lp.waitForFunction(() => { const l = document.getElementById('site-loader'); return l && getComputedStyle(l).position === 'fixed'; }, null, { timeout: 5000 });
+    const look = await lp.evaluate(() => {
+      const l = document.getElementById('site-loader'); const r = l.getBoundingClientRect();
+      return { full: r.width >= innerWidth - 1 && r.height >= innerHeight - 1, bg: getComputedStyle(l).backgroundColor, body: getComputedStyle(document.body).backgroundColor };
+    });
+    checks++; if (!look.full || look.bg !== look.body) bad(`${name}/${w}/${theme}: loader not full screen or bg differs ${JSON.stringify(look)}`);
+    await lp.waitForURL(/\/projects\/$/, { timeout: 6000 }).catch(() => {});
+    const took = Date.now() - t0;
+    checks++; if (!/\/projects\/$/.test(lp.url())) bad(`${name}/${w}/${theme}: loader did not go to 案例作品 (${lp.url()})`);
+    checks++; if (took > 4200) bad(`${name}/${w}/${theme}: loader took ${took}ms (limit 3s + page load)`);
+    await lp.waitForLoadState('load');
+    checks++; if (await lp.evaluate(() => document.documentElement.classList.contains('is-loading'))) bad(`${name}/${w}/${theme}: loader shown again on 案例作品`);
+    await lp.goto(B + '/', { waitUntil: 'load' }); await lp.waitForTimeout(400);
+    checks++; if (!/\/yeshun-web\/$/.test(new URL(lp.url()).pathname) || await lp.locator('#site-loader').isVisible()) bad(`${name}/${w}/${theme}: homepage not reachable after loading (${lp.url()})`);
+    await lc.close();
+  }
+  if (loaderOn && cookieOn) {
+    const lc = await b.newContext({ viewport: { width: 1440, height: 900 } }, true);
+    const lp = await lc.newPage(); await lp.goto(B + '/about/', { waitUntil: 'load' });
+    await lp.waitForFunction(() => !document.documentElement.classList.contains('is-loading'), null, { timeout: 5000 }).catch(() => {});
+    checks++; if (!new URL(lp.url()).pathname.endsWith('/about/') || await lp.evaluate(() => document.documentElement.classList.contains('is-loading'))) bad(`${name}: loader on /about/ did not finish in place`);
+    // Cookie 提示：第一次出現、在手機快速聯絡列上方、按「我知道了」後消失，重新整理也不再出現
+    checks++; if (!(await lp.locator('#cookie-notice').isVisible())) bad(`${name}: cookie notice not shown on first visit`);
+    await lp.locator('[data-cookie-ok]').click(); await lp.waitForTimeout(400);
+    checks++; if (await lp.locator('#cookie-notice').isVisible()) bad(`${name}: cookie notice did not close`);
+    await lp.reload({ waitUntil: 'load' });
+    checks++; if (await lp.locator('#cookie-notice').isVisible()) bad(`${name}: cookie notice came back after reload`);
+    await lc.close();
+    const pc = await b.newContext({ viewport: { width: 390, height: 844 } }, true);
+    await pc.addInitScript(() => { try { sessionStorage.setItem('yeshun-loaded', '1'); } catch {} });
+    const pp = await pc.newPage(); await pp.goto(B + '/projects/', { waitUntil: 'load' });
+    const pos = await pp.evaluate(() => {
+      const c = document.getElementById('cookie-notice').getBoundingClientRect(), q = document.querySelector('.quickbar').getBoundingClientRect();
+      return { above: c.bottom <= q.top, inside: c.left >= 0 && c.right <= innerWidth && c.top >= 0 };
+    });
+    checks++; if (!pos.above || !pos.inside) bad(`${name}: cookie notice overlaps quick bar or off screen ${JSON.stringify(pos)}`);
+    await pp.locator('.cookie__text a').click(); await pp.waitForLoadState('load');
+    checks++; if (!new URL(pp.url()).pathname.includes('/privacy')) bad(`${name}: privacy link broken (${pp.url()})`);
+    await pc.close();
+  }
+  // 聯絡表單：送出內容正確、成功／太頻繁／失敗都有清楚訊息（攔截送出，不會真的存檔或寄信）
+  {
+    const fc = await b.newContext({ viewport: { width: 390, height: 844 } });
+    const fp = await fc.newPage(); let sent = null; let reply = { status: 200, body: '{"ok":true,"emailSent":true}' };
+    await fp.route(/functions\/v1\/submit-inquiry/, (r) => { sent = r.request().postDataJSON(); r.fulfill({ status: reply.status, contentType: 'application/json', body: reply.body }); });
+    await fp.goto(B + '/contact/', { waitUntil: 'load' });
+    const submit = async () => { await fp.locator('.form__submit').click(); await fp.waitForTimeout(400); return fp.locator('[data-form-msg]').textContent(); };
+    checks++; if (!(await submit()).includes('請填寫姓名與電話')) bad(`${name}: empty form not rejected`);
+    await fp.locator('input[name=name]').fill('測試'); await fp.locator('input[name=phone]').fill('0912345678');
+    await fp.locator('select[name=service]').selectOption({ index: 1 }); await fp.locator('textarea[name=message]').fill('想翻新');
+    const okMsg = await submit();
+    checks++; if (!okMsg.includes('已收到您的需求') || sent?.name !== '測試' || sent?.phone !== '0912345678' || !sent?.service || sent?.message !== '想翻新' || sent?.website) bad(`${name}: form submit wrong ${okMsg} ${JSON.stringify(sent)}`);
+    checks++; if (await fp.locator('input[name=name]').inputValue() !== '') bad(`${name}: form not cleared after success`);
+    await fp.locator('input[name=name]').fill('測試'); await fp.locator('input[name=phone]').fill('0912345678');
+    reply = { status: 429, body: '{"error":"too_many"}' };
+    checks++; if (!(await submit()).includes('剛剛已經送出過')) bad(`${name}: rate limit message missing`);
+    reply = { status: 500, body: '{"error":"x"}' };
+    checks++; if (!(await submit()).includes('電話、LINE')) bad(`${name}: error message missing`);
+    checks++; if (await fp.locator('.form__trap').evaluate((el) => el.getBoundingClientRect().right > 0)) bad(`${name}: bot trap field on screen`);
+    await fc.close();
+  }
+  // 內頁頁首底圖：網路慢、圖片晚到時先不顯示，下載完才淡入並開始放大（淺色、深色都要）
+  for (const theme of ['light', 'dark']) {
+    const sc = await b.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: theme });
+    await sc.route(/stage-site\.webp/, async (r) => { await new Promise((ok) => setTimeout(ok, 1500)); await r.continue(); });
+    const sp = await sc.newPage(); await sp.goto(B + '/projects/', { waitUntil: 'domcontentloaded' });
+    const st = () => sp.evaluate(() => { const i = document.querySelector('.page-hero__bg img'); const a = i.getAnimations().find((x) => x.animationName === 'page-hero-zoom'); return { op: +getComputedStyle(i).opacity, zoom: a ? a.currentTime : -1 }; });
+    await sp.waitForTimeout(500); const early = await st();
+    await sp.waitForTimeout(2600); const late = await st();
+    checks++; if (early.op > 0.05 || early.zoom >= 0) bad(`${name}/${theme}: banner shown or zooming before image loaded ${JSON.stringify(early)}`);
+    checks++; if (late.op < 0.5 || late.zoom <= 0 || late.zoom > 2500) bad(`${name}/${theme}: banner not faded in / zoom not started at load ${JSON.stringify(late)}`);
+    await sc.close();
+  }
   // 首頁背景輪播：6 秒後換到下一張；/details/ 隱藏中，要轉回首頁
   {
     const ctx3 = await b.newContext({ viewport: { width: 1440, height: 900 } });

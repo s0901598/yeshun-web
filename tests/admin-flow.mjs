@@ -310,6 +310,30 @@ try {
 const { data: st4 } = await svc.from('site_settings').select('about_intro').eq('id', 1).single();
 check(st4.about_intro === origIntro.about_intro, 'intro restored');
 
+// ---------- 10e. 客戶需求：新需求出現在分頁（含數字）→ 標記已處理 → 刪除；測試資料一定清掉 ----------
+const { data: inq } = await svc.from('inquiries').insert({ name: 'E2E 測試客戶', phone: '0912-000-111', service: '營造工程（業順營造）', message: '自動測試，請忽略' }).select('id').single();
+try {
+  await p.reload(); await p.getByRole('link', { name: /客戶需求/ }).waitFor();
+  const badge = Number(await p.locator('.a-tab-badge').textContent());
+  check(badge >= 1, `inquiries tab shows unread count (${badge})`);
+  await p.getByRole('link', { name: /客戶需求/ }).click();
+  const card = p.locator('.a-inq__item', { hasText: 'E2E 測試客戶' });
+  await card.waitFor();
+  check(await card.getByText('0912-000-111').isVisible() && await card.getByText('自動測試，請忽略').isVisible(), 'inquiry details shown');
+  await card.getByRole('button', { name: '標記已處理' }).click();
+  await toastHas(p, '已標記');
+  const { data: done } = await svc.from('inquiries').select('status, handled_at').eq('id', inq.id).single();
+  check(done.status === 'done' && done.handled_at, 'marked as handled');
+  check(!(await p.locator('.a-inq__item', { hasText: 'E2E 測試客戶' }).count()), 'handled inquiry hidden from 未處理 list');
+  await p.getByRole('tab', { name: /全部/ }).click();
+  p.dialogQueue.push(true);
+  await p.locator('.a-inq__item', { hasText: 'E2E 測試客戶' }).getByRole('button', { name: '刪除' }).click();
+  await toastHas(p, '已刪除');
+  check(!(await svc.from('inquiries').select('id').eq('id', inq.id)).data.length, 'inquiry deleted');
+} finally {
+  await svc.from('inquiries').delete().eq('name', 'E2E 測試客戶');
+}
+
 const errs = p.errors;
 await browser.close();
 

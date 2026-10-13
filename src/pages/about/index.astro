@@ -16,7 +16,7 @@ const services = settings.aboutServices.map(splitNote);
 ---
 <Base title={settings.aboutTitle} description={plainText(settings.aboutIntro[0]) || `${yeshun.shortName}｜${yaosan.shortName}`}>
   <section class="page-hero">
-    <div class="page-hero__bg" aria-hidden="true"><img src={u('/images/hero-site.webp')} alt="" /></div>
+    <div class="page-hero__bg" aria-hidden="true"><img src={u('/images/hero-site.webp')} alt="" fetchpriority="high" decoding="async" /></div>
     <div class="container">
       <p class="eyebrow">ABOUT</p>
       <h1 class="h-display">{settings.aboutTitle}</h1>

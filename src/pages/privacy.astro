@@ -1,0 +1,74 @@
+---
+// 隱私權政策（依台灣個人資料保護法第 8 條應告知事項撰寫）。公司名稱、Email、地址來自後台
+import Base from '../layouts/Base.astro';
+import { getCompanies, getSettings } from '../lib/data';
+
+const { yeshun } = await getCompanies();
+const settings = await getSettings();
+const updated = '2026 年 10 月 13 日';
+---
+<Base title="隱私權政策" description={`${yeshun.name}隱私權政策：個人資料的蒐集、利用與保護方式。`}>
+  <section class="page-hero page-hero--plain">
+    <div class="container">
+      <p class="eyebrow">PRIVACY</p>
+      <h1 class="h-display">隱私權政策</h1>
+      <p class="lead">最後更新：{updated}</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container policy">
+      <p>{yeshun.name}（以下稱「本公司」）重視您的個人資料保護。依《個人資料保護法》，以下說明本網站如何蒐集、利用與保護您的資料。</p>
+
+      <h2>一、蒐集的資料與目的</h2>
+      <ol>
+        <li><strong>您主動提供的資料</strong>：您透過電話、Email、LINE 或網站表單與我們聯絡時，所提供的姓名、電話、Email、地址與工程需求等。用途為回覆諮詢、安排現場丈量、報價，以及提供營造或室內裝修服務。透過網站表單送出的內容，會存放在本公司使用的雲端資料庫，並以電子郵件通知本公司人員。</li>
+        <li><strong>瀏覽偏好</strong>：本網站會在您的瀏覽器中記錄深淺色設定，以及您是否已關閉本 Cookie 提示。這些資料只存在您的裝置上，本公司不會收到。</li>
+        <li><strong>第三方服務</strong>：「聯絡我們」頁面嵌入了 Google 地圖，Google 可能依其<a href="https://policies.google.com/privacy?hl=zh-TW" target="_blank" rel="noopener">隱私權政策</a>使用 Cookie。本網站目前沒有使用廣告或追蹤分析工具。</li>
+      </ol>
+
+      <h2>二、利用的期間、地區、對象與方式</h2>
+      <ul>
+        <li><strong>期間</strong>：至上述目的完成為止，或依法令規定的保存期限。</li>
+        <li><strong>地區</strong>：中華民國境內，以及本公司所使用雲端服務的所在地區。</li>
+        <li><strong>對象</strong>：本公司，以及為完成服務所必要的合作廠商（例如施工協力廠商）。除法令另有規定外，不會提供給其他第三人。</li>
+        <li><strong>方式</strong>：以電話、電子郵件、簡訊、通訊軟體或書面等方式聯繫與利用。</li>
+      </ul>
+
+      <h2>三、您的權利</h2>
+      <p>依《個人資料保護法》第 3 條，您可以向本公司請求：查詢或閱覽、製給複製本、補充或更正、停止蒐集、處理或利用，以及刪除您的個人資料。請透過文末的聯絡方式提出。</p>
+
+      <h2>四、不提供資料的影響</h2>
+      <p>您可以自由選擇是否提供個人資料。若不提供，本公司可能無法回覆您的諮詢或提供服務。</p>
+
+      <h2>五、Cookie 的管理</h2>
+      <p>您可以在瀏覽器設定中刪除或封鎖 Cookie。網站仍可正常瀏覽，但偏好設定（例如深淺色）可能無法保留，地圖也可能無法顯示。</p>
+
+      <h2>六、資料安全</h2>
+      <p>本公司以合理的技術與管理措施保護您的個人資料，防止遭到未經授權的存取、竄改或洩漏。</p>
+
+      <h2>七、政策修訂</h2>
+      <p>本政策如有修改，將公告於本頁並更新上方的日期。</p>
+
+      <h2>八、聯絡我們</h2>
+      <ul class="policy__contact">
+        <li>{yeshun.name}</li>
+        {settings.email && <li>Email：<a href={settings.emailHref}>{settings.email}</a></li>}
+        {settings.phone && <li>電話：<a href={settings.phoneHref}>{settings.phone}</a></li>}
+        {settings.address && <li>地址：{settings.address}</li>}
+      </ul>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .page-hero--plain { padding-bottom: 40px; }
+  .policy { max-width: 820px; display: grid; gap: 16px; font-size: 18px; line-height: 1.9; color: var(--text-2); }
+  .policy h2 { font-size: clamp(21px, 2.2vw, 24px); color: var(--gold-text); margin-top: 24px; }
+  .policy strong { color: var(--text); }
+  .policy ol, .policy ul { display: grid; gap: 10px; padding-left: 1.4em; }
+  .policy ol { list-style: decimal; }
+  .policy ul { list-style: disc; }
+  .policy a { color: var(--gold-text); text-decoration: underline; text-underline-offset: 3px; }
+  .policy__contact { list-style: none !important; padding-left: 0 !important; }
+</style>

@@ -152,14 +152,19 @@ h1, h2, h3 { font-weight: 700; line-height: 1.3; letter-spacing: 0.02em; }
 .page-hero { position: relative; padding: calc(var(--header-h) + 56px) 0 56px; border-bottom: 1px solid var(--line); overflow: hidden; }
 @media (min-width: 768px) { .page-hero { padding: calc(var(--header-h) + 88px) 0 80px; } }
 .page-hero__bg { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
-/* 底圖：比原本亮，並且緩慢放大（只放大圖片本身，外框固定，不會推動版面） */
+/* 底圖：比原本亮，並且緩慢放大（只放大圖片本身，外框固定，不會推動版面）。
+   圖片下載完才淡入、才開始放大，避免「圖還沒出來、放大已經跑了一段」；沒有 JavaScript 時直接顯示 */
 .page-hero__bg img {
   width: 100%; height: 100%; object-fit: cover; opacity: .62;
-  transform-origin: 60% 50%; animation: page-hero-zoom 22s ease-out both;
+  transform-origin: 60% 50%; animation: page-hero-zoom 14s ease-out both;
 }
-@keyframes page-hero-zoom { from { transform: scale(1); } to { transform: scale(1.14); } }
+:root.js .page-hero__bg img { opacity: 0; animation: none; transition: opacity .9s ease; }
+:root.js .page-hero__bg.is-ready img { opacity: .62; animation: page-hero-zoom 14s ease-out both; }
+@keyframes page-hero-zoom { from { transform: scale(1); } to { transform: scale(1.15); } }
 /* 淺色模式：照片轉黑白，避免夕陽照片讓白底看起來偏咖啡色 */
 :root[data-theme='light'] .page-hero__bg img { filter: grayscale(1); opacity: .55; }
+:root.js[data-theme='light'] .page-hero__bg img { opacity: 0; }
+:root.js[data-theme='light'] .page-hero__bg.is-ready img { opacity: .55; }
 /* 遮罩只壓左邊文字區和底部，右側照片看得清楚 */
 .page-hero__bg::after {
   content: ''; position: absolute; inset: 0;

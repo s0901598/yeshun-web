@@ -8,9 +8,11 @@ import Details from './Details';
 import Process from './Process';
 import Accounts, { roleLabel } from './Accounts';
 import Companies from './Companies';
+import Inquiries, { countNewInquiries, onInquiriesChanged } from './Inquiries';
 
 const tabs = [
   { hash: '#/projects', label: '案例作品' },
+  { hash: '#/inquiries', label: '客戶需求' },
   { hash: '#/details', label: '注重的細節' },
   { hash: '#/process', label: '服務流程' },
   { hash: '#/company', label: '公司資料' },
@@ -102,11 +104,14 @@ function Shell(props: { email: string }) {
   const hash = useHash();
   const [site, setSite] = useState<SiteStatus>('clean');
   const [role, setRole] = useState<'admin' | 'editor' | null>(null);
+  const [newInquiries, setNewInquiries] = useState(0);
   useEffect(() => onSiteStatus(setSite), []);
   useEffect(() => {
-    void refreshSiteStatus();
-    const t = setInterval(() => void refreshSiteStatus(), 30000); // 別人改了內容也會看到
-    return () => clearInterval(t);
+    const refreshInquiries = () => countNewInquiries().then(setNewInquiries).catch(() => {});
+    void refreshSiteStatus(); void refreshInquiries();
+    const off = onInquiriesChanged(refreshInquiries);
+    const t = setInterval(() => { void refreshSiteStatus(); void refreshInquiries(); }, 30000); // 別人改了內容、客戶新送出需求也會看到
+    return () => { clearInterval(t); off(); };
   }, []);
   const publishAll = async () => {
     if (!confirm('要把後台目前已儲存的內容發布到官網嗎？\n（還沒發布的案例不會被公開，案例請在案例頁按「發布到官網」）\n官網約 1–2 分鐘後更新。')) return;
@@ -131,6 +136,7 @@ function Shell(props: { email: string }) {
     : hash.startsWith('#/details') ? <Details />
     : hash.startsWith('#/process') ? <Process />
     : hash.startsWith('#/company') ? <Companies />
+    : hash.startsWith('#/inquiries') ? <Inquiries />
     : <Projects hash={hash} />;
 
   return (
@@ -146,7 +152,9 @@ function Shell(props: { email: string }) {
         </div>
         <nav class="a-tabs">
           {[...tabs, ...(isAdmin ? [{ hash: '#/accounts', label: '帳號管理' }] : [])].map((t) => (
-            <a href={t.hash} class={hash.startsWith(t.hash) ? 'is-active' : ''}>{t.label}</a>
+            <a href={t.hash} class={hash.startsWith(t.hash) ? 'is-active' : ''}>
+              {t.label}{t.hash === '#/inquiries' && newInquiries > 0 && <span class="a-tab-badge" aria-label={`${newInquiries} 筆未處理`}>{newInquiries}</span>}
+            </a>
           ))}
         </nav>
         <div class={`a-site a-site--${site}`} role="status">

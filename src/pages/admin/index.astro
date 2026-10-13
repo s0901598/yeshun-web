@@ -21,7 +21,7 @@ import { darkModeEnabled } from '../../data/site';
         var t = 'light';
         if (darkModeEnabled) {
           try { t = localStorage.getItem('yeshun-theme'); } catch (e) {}
-          if (t !== 'dark') t = 'light';
+          if (t !== 'dark' && t !== 'light') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
         document.documentElement.dataset.theme = t;
       })();

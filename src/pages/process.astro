@@ -11,7 +11,7 @@ const processSteps = await getProcessSteps();
 ---
 <Base title="服務流程" description="從初步諮詢到完工保固，業順營造的五個服務步驟。">
   <section class="page-hero">
-    <div class="page-hero__bg" aria-hidden="true"><img src={u('/images/detail-plan.webp')} alt="" /></div>
+    <div class="page-hero__bg" aria-hidden="true"><img src={u('/images/detail-plan.webp')} alt="" fetchpriority="high" decoding="async" /></div>
     <div class="container">
       <p class="eyebrow">PROCESS</p>
       <h1 class="h-display">服務流程<Todo show={processTodo} label="內容待確認" /></h1>

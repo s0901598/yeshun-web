@@ -1,9 +1,11 @@
 ---
 import { u } from '../lib/url';
 import '../styles/global.css';
-import { darkModeEnabled, siteNav } from '../data/site';
+import { cookieNoticeEnabled, darkModeEnabled, loaderEnabled, siteNav } from '../data/site';
 import { getCompanies, getSettings } from '../lib/data';
 import { plainText } from '../lib/rich';
+import Loader from '../components/Loader.astro';
+import CookieNotice from '../components/CookieNotice.astro';
 
 interface Props { title?: string; description?: string; noindex?: boolean }
 const companies = await getCompanies();
@@ -27,25 +29,37 @@ const isActive = (href: string) => path === u(href) || path.startsWith(u(href) +
     <meta property="og:description" content={description} />
     <meta name="theme-color" content="#ffffff" data-theme-color />
     <script is:inline define:vars={{ darkModeEnabled }}>
-      // 在畫面出現前決定主題，避免閃一下：預設淺色；訪客按過切換鈕選了深色才用深色。
+      // 在畫面出現前決定主題，避免閃一下：訪客按過切換鈕就用他選的；沒選過就跟著手機／電腦的系統設定；系統沒有設定時用淺色。
       // 選擇存在 localStorage 的 yeshun-theme（2026-10-12 改名：舊的 theme 是改成預設淺色以前選的，一律作廢）；手機封鎖網站資料時改記在分頁的 window.name（同一個分頁換頁仍有效）
       (function () {
         var t = 'light';
         if (darkModeEnabled) {
           try { t = localStorage.getItem('yeshun-theme'); } catch (e) { t = null; }
           if (!t) { var m = /(?:^|;)yeshun-theme=(dark|light)/.exec(window.name); t = m && m[1]; }
-          if (t !== 'dark') t = 'light';
+          if (t !== 'dark' && t !== 'light') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
         document.documentElement.dataset.theme = t;
+        document.documentElement.classList.add('js');
         document.querySelector('[data-theme-color]').content = t === 'light' ? '#ffffff' : '#1a1a1a';
       })();
     </script>
+    {!noindex && loaderEnabled && (
+      <script is:inline>
+        // 進站 Loading：這個分頁還沒看過才顯示（sessionStorage；被封鎖時改看 window.name）
+        (function () {
+          var seen = false;
+          try { seen = sessionStorage.getItem('yeshun-loaded') === '1'; } catch (e) {}
+          if (!seen && !/(?:^|;)yeshun-loaded=1/.test(window.name)) document.documentElement.classList.add('is-loading');
+        })();
+      </script>
+    )}
     <link rel="icon" type="image/png" href={u('/favicon.png')} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
   </head>
   <body>
+    {!noindex && loaderEnabled && <Loader />}
     <header class="header" data-header>
       <div class="container header__inner">
         <a href={u('/')} class="brand" aria-label={`${yeshun.shortName}、${yaosan.shortName} 首頁`}>
@@ -135,6 +149,7 @@ const isActive = (href: string) => path === u(href) || path.startsWith(u(href) +
           <ul class="footer__list footer__list--cols">
             {nav.flatMap((item) => item.children ?? [item]).map((item) => <li><a href={u(item.href)}>{item.label}</a></li>)}
             <li><a href={u('/contact')}>聯絡我們</a></li>
+            {cookieNoticeEnabled && <li><a href={u('/privacy')}>隱私權政策</a></li>}
           </ul>
         </div>
       </div>
@@ -152,7 +167,7 @@ const isActive = (href: string) => path === u(href) || path.startsWith(u(href) +
 
     <script>
       import { darkModeEnabled } from '../data/site';
-      // 淺色／深色切換：預設淺色，記住使用者選擇
+      // 淺色／深色切換：記住使用者選擇；沒選過時跟著系統設定變
       const root = document.documentElement;
       const themeColor = document.querySelector<HTMLMetaElement>('[data-theme-color]');
       const applyTheme = (t: string) => {
@@ -170,8 +185,11 @@ const isActive = (href: string) => path === u(href) || path.startsWith(u(href) +
         let t: string | null = null;
         try { t = localStorage.getItem('yeshun-theme'); } catch {}
         t ||= /(?:^|;)yeshun-theme=(dark|light)/.exec(window.name)?.[1] ?? null;
-        return darkModeEnabled && t === 'dark' ? 'dark' : 'light';
+        if (!darkModeEnabled) return 'light';
+        if (t === 'dark' || t === 'light') return t;
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       };
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme(savedTheme()));
       window.addEventListener('pageshow', () => applyTheme(savedTheme()));
       window.addEventListener('storage', (e) => { if (e.key === 'yeshun-theme') applyTheme(savedTheme()); });
 
@@ -263,6 +281,16 @@ const isActive = (href: string) => path === u(href) || path.startsWith(u(href) +
         });
       }, { threshold: 0.15 });
       document.querySelectorAll('.reveal, [data-stagger]').forEach((el) => io.observe(el));
+    </script>
+    {!noindex && cookieNoticeEnabled && <CookieNotice />}
+    <script is:inline>
+      // 內頁頁首底圖：下載完才淡入並開始放大（已經在快取裡的立刻開始）
+      document.querySelectorAll('.page-hero__bg').forEach(function (bg) {
+        var img = bg.querySelector('img');
+        var ready = function () { bg.classList.add('is-ready'); };
+        if (!img || (img.complete && img.naturalWidth)) ready();
+        else { img.addEventListener('load', ready); img.addEventListener('error', ready); }
+      });
     </script>
   </body>
 </html>
