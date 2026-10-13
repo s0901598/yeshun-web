@@ -3,9 +3,9 @@
 // 改成 false 會全站固定淺色、拿掉切換鈕
 export const darkModeEnabled = true;
 
-// 進站 Loading、Cookie 提示＋隱私權政策：等業主確認後才開（true＝顯示）
-export const loaderEnabled = false;
-export const cookieNoticeEnabled = false;
+// 進站 Loading、Cookie 提示＋隱私權政策（2026-10-13 業主確認上線；false＝關閉）
+export const loaderEnabled = true;
+export const cookieNoticeEnabled = true;
 
 export const site = {
   slogan: '從設計到完工，每個細節都看得見',

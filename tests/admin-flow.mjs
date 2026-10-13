@@ -325,6 +325,8 @@ try {
   const { data: done } = await svc.from('inquiries').select('status, handled_at').eq('id', inq.id).single();
   check(done.status === 'done' && done.handled_at, 'marked as handled');
   check(!(await p.locator('.a-inq__item', { hasText: 'E2E 測試客戶' }).count()), 'handled inquiry hidden from 未處理 list');
+  await p.getByRole('tab', { name: /已處理/ }).click();
+  check(await p.locator('.a-inq__item', { hasText: 'E2E 測試客戶' }).getByText('處理於').isVisible(), 'handled inquiry listed under 已處理 with time');
   await p.getByRole('tab', { name: /全部/ }).click();
   p.dialogQueue.push(true);
   await p.locator('.a-inq__item', { hasText: 'E2E 測試客戶' }).getByRole('button', { name: '刪除' }).click();

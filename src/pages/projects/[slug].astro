@@ -32,7 +32,7 @@ const others = related.length ? related : all.filter((pj) => pj.slug !== project
 <div class="pd">
   <section class="intro">
     <div class="container">
-      <a href={u('/projects')} class="back mono">← ALL PROJECTS</a>
+      <a href={u('/projects')} class="back" data-back-to-list>← 回案例列表</a>
       <p class="eyebrow">{cat.en} · {statusLabels[project.status]}</p>
       <h1 class="title">{project.title}</h1>
 

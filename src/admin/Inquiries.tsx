@@ -21,7 +21,7 @@ const changed = () => listeners.forEach((fn) => fn());
 
 export default function Inquiries() {
   const [rows, setRows] = useState<Inquiry[] | null>(null);
-  const [filter, setFilter] = useState<'new' | 'all'>('new');
+  const [filter, setFilter] = useState<'new' | 'done' | 'all'>('new');
   const [busy, setBusy] = useState('');
 
   const load = async () => {
@@ -30,8 +30,10 @@ export default function Inquiries() {
   useEffect(() => { load().catch((e) => toast(`讀取失敗：${e.message}`, 'error')); }, []);
 
   if (!rows) return <p class="a-loading">載入中…</p>;
-  const shown = filter === 'new' ? rows.filter((r) => r.status === 'new') : rows;
-  const newCount = rows.filter((r) => r.status === 'new').length;
+  const doneRows = rows.filter((r) => r.status === 'done')
+    .sort((a, b) => (b.handled_at ?? b.created_at).localeCompare(a.handled_at ?? a.created_at)); // 最近處理的在前面
+  const shown = filter === 'new' ? rows.filter((r) => r.status === 'new') : filter === 'done' ? doneRows : rows;
+  const newCount = rows.length - doneRows.length;
 
   const setStatus = async (r: Inquiry, status: 'new' | 'done') => {
     setBusy(r.id);
@@ -57,17 +59,18 @@ export default function Inquiries() {
       <p class="a-hint">官網「聯絡我們」表單送出的內容會出現在這裡，同時寄 Email 通知。聯絡完客戶後按「標記已處理」。</p>
       <div class="a-filter" role="tablist" aria-label="篩選">
         <button type="button" role="tab" aria-selected={filter === 'new'} class={filter === 'new' ? 'is-active' : ''} onClick={() => setFilter('new')}>未處理（{newCount}）</button>
+        <button type="button" role="tab" aria-selected={filter === 'done'} class={filter === 'done' ? 'is-active' : ''} onClick={() => setFilter('done')}>已處理（{doneRows.length}）</button>
         <button type="button" role="tab" aria-selected={filter === 'all'} class={filter === 'all' ? 'is-active' : ''} onClick={() => setFilter('all')}>全部（{rows.length}）</button>
       </div>
       {shown.length === 0 ? (
-        <p class="a-empty">{filter === 'new' ? '目前沒有未處理的需求。' : '還沒有客戶從官網送出需求。'}</p>
+        <p class="a-empty">{filter === 'new' ? '目前沒有未處理的需求。' : filter === 'done' ? '還沒有已處理的需求。' : '還沒有客戶從官網送出需求。'}</p>
       ) : (
         <ul class="a-inq">
           {shown.map((r) => (
             <li key={r.id} class={`a-card a-inq__item ${r.status === 'done' ? 'is-done' : ''}`}>
               <div class="a-inq__head">
                 <h3>{r.name}{r.status === 'new' ? <span class="a-dot">未處理</span> : <span class="a-inq__done">已處理</span>}</h3>
-                <time class="a-inq__time">{when(r.created_at)}</time>
+                <time class="a-inq__time">{when(r.created_at)}{r.status === 'done' && r.handled_at && `・處理於 ${when(r.handled_at)}`}</time>
               </div>
               <p class="a-inq__phone"><a href={`tel:${r.phone.replace(/[^0-9+]/g, '')}`}>📞 {r.phone}</a></p>
               <dl class="a-inq__meta">

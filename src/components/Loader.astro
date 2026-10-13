@@ -1,5 +1,5 @@
 ---
-// 進站 Loading：每次打開官網只出現一次（同一個分頁換頁不再出現）。
+// 進站 Loading：每個分頁第一次打開官網、或按重新整理時出現（在官網裡換頁、上一頁不出現）。
 // 業順 Logo 線條版，金色海浪從下往上填滿；進度依實際載入，最少 1.5 秒、最多 3 秒。
 // 從首頁網址進來時，100% 後直接跳到「案例作品」頁。
 import { u } from '../lib/url';
@@ -69,14 +69,14 @@ const homePath = u('/');
     };
     var tick = function (now) {
       var t = now - start;
-      // 顯示的進度不超過時間進度（至少 1.5 秒），超過 3 秒直接完成
-      var target = t >= MAX ? 1 : Math.min(real(), t / MIN);
-      shown += (target - shown) * 0.18;
-      if (target === 1 && shown > 0.995) shown = 1;
+      // 顯示的進度不超過時間進度（至少 1.5 秒）；2.5 秒起直接衝到 100%，3 秒時一定填滿
+      var target = t >= MAX - 500 ? 1 : Math.min(real(), t / MIN);
+      shown += (target - shown) * 0.2;
+      if ((target === 1 && shown > 0.995) || t >= MAX) shown = 1;
       // 波浪從 Logo 底部（y≈172）升到頂部（y≈-6）
       rise.setAttribute("transform", "translate(0 " + (172 - shown * 190).toFixed(1) + ")");
       pct.textContent = Math.round(shown * 100);
-      if (shown >= 1) setTimeout(finish, 250); else requestAnimationFrame(tick);
+      if (shown >= 1) setTimeout(finish, 120); else requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
   })();

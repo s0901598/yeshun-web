@@ -186,6 +186,14 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
     checks++; if (took > 4200) bad(`${name}/${w}/${theme}: loader took ${took}ms (limit 3s + page load)`);
     await lp.waitForLoadState('load');
     checks++; if (await lp.evaluate(() => document.documentElement.classList.contains('is-loading'))) bad(`${name}/${w}/${theme}: loader shown again on 案例作品`);
+    // 重新整理：Loading 要再出現（在案例作品頁重新整理，完成後留在原頁）
+    await lp.reload({ waitUntil: 'commit' });
+    await lp.waitForFunction(() => document.documentElement.classList.contains('is-loading'), null, { timeout: 5000 }).catch(() => {});
+    checks++; if (!(await lp.evaluate(() => document.documentElement.classList.contains('is-loading')))) bad(`${name}/${w}/${theme}: loader not shown on reload`);
+    await lp.waitForFunction(() => !document.documentElement.classList.contains('is-loading'), null, { timeout: 5000 }).catch(() => {});
+    checks++; if (!/\/projects\/$/.test(lp.url())) bad(`${name}/${w}/${theme}: reload on 案例作品 did not stay (${lp.url()})`);
+    await Promise.all([lp.waitForNavigation(), lp.locator('.nav__link', { hasText: '公司介紹' }).click()]).catch(() => {});
+    checks++; if (await lp.evaluate(() => document.documentElement.classList.contains('is-loading'))) bad(`${name}/${w}/${theme}: loader shown on in-site navigation`);
     await lp.goto(B + '/', { waitUntil: 'load' }); await lp.waitForTimeout(400);
     checks++; if (!/\/yeshun-web\/$/.test(new URL(lp.url()).pathname) || await lp.locator('#site-loader').isVisible()) bad(`${name}/${w}/${theme}: homepage not reachable after loading (${lp.url()})`);
     await lc.close();
@@ -213,6 +221,29 @@ for (const [name, launch] of [['chromium', () => chromium.launch()], ['webkit', 
     await pp.locator('.cookie__text a').click(); await pp.waitForLoadState('load');
     checks++; if (!new URL(pp.url()).pathname.includes('/privacy')) bad(`${name}: privacy link broken (${pp.url()})`);
     await pc.close();
+  }
+  // 上一頁只退一層：主要頁面之間切換不累積紀錄（按上一頁就離開官網）；點進案例按上一頁回列表；「回案例列表」直接回去
+  {
+    const hc = await b.newContext({ viewport: { width: 1440, height: 900 } });
+    const hp = await hc.newPage();
+    await hp.goto('data:text/html,<title>外部網站</title>外部網站');
+    await hp.goto(B + '/about/', { waitUntil: 'load' });
+    for (const label of ['案例作品', '服務流程', '公司介紹']) await Promise.all([hp.waitForNavigation(), hp.locator('.nav__link', { hasText: label }).click()]);
+    await hp.goBack({ waitUntil: 'load' }).catch(() => {});
+    checks++; if (!hp.url().startsWith('data:')) bad(`${name}: back after switching main pages should leave site (${hp.url()})`);
+    await hp.goto(B + '/projects/', { waitUntil: 'load' });
+    await hp.evaluate(() => scrollTo(0, 700)); await hp.waitForTimeout(200);
+    await Promise.all([hp.waitForNavigation(), hp.locator('[data-grid] a').first().click()]);
+    const caseUrl = hp.url();
+    await hp.goBack({ waitUntil: 'load' });
+    checks++; if (!/\/projects\/$/.test(hp.url())) bad(`${name}: back from case should return to list (${hp.url()})`);
+    await hp.goForward({ waitUntil: 'load' });
+    checks++; if (hp.url() !== caseUrl) bad(`${name}: forward should reopen case`);
+    await Promise.all([hp.waitForNavigation(), hp.locator('[data-back-to-list]').click()]);
+    checks++; if (!/\/projects\/$/.test(hp.url())) bad(`${name}: 回案例列表 did not open list (${hp.url()})`);
+    await hp.goBack({ waitUntil: 'load' }).catch(() => {});
+    checks++; if (hp.url().includes('/projects/') && hp.url() !== B + '/projects/') bad(`${name}: 回案例列表 left an extra history step (${hp.url()})`);
+    await hc.close();
   }
   // 聯絡表單：送出內容正確、成功／太頻繁／失敗都有清楚訊息（攔截送出，不會真的存檔或寄信）
   {

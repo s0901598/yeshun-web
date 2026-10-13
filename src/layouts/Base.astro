@@ -45,11 +45,15 @@ const isActive = (href: string) => path === u(href) || path.startsWith(u(href) +
     </script>
     {!noindex && loaderEnabled && (
       <script is:inline>
-        // 進站 Loading：這個分頁還沒看過才顯示（sessionStorage；被封鎖時改看 window.name）
+        // 進站 Loading：這個分頁第一次打開官網、或按重新整理時顯示；在官網裡換頁、按上一頁／下一頁不顯示
+        // （看過的紀錄存在 sessionStorage；被封鎖時改看 window.name）
         (function () {
           var seen = false;
           try { seen = sessionStorage.getItem('yeshun-loaded') === '1'; } catch (e) {}
-          if (!seen && !/(?:^|;)yeshun-loaded=1/.test(window.name)) document.documentElement.classList.add('is-loading');
+          seen = seen || /(?:^|;)yeshun-loaded=1/.test(window.name);
+          var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+          var reload = nav ? nav.type === 'reload' : performance.navigation && performance.navigation.type === 1;
+          if (!seen || reload) document.documentElement.classList.add('is-loading');
         })();
       </script>
     )}
@@ -192,6 +196,28 @@ const isActive = (href: string) => path === u(href) || path.startsWith(u(href) +
       window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme(savedTheme()));
       window.addEventListener('pageshow', () => applyTheme(savedTheme()));
       window.addEventListener('storage', (e) => { if (e.key === 'yeshun-theme') applyTheme(savedTheme()); });
+
+      // 上一頁只退一層：前往主要頁面（選單、Logo、預約諮詢、頁尾連結…）一律用「取代」不累積紀錄；
+      // 只有點進案例這種下一層頁面才會多一層。所以：案例 → 上一頁回列表；列表 → 上一頁離開官網。
+      const siteRoot = new URL('.', new URL(document.querySelector<HTMLAnchorElement>('.brand')?.href ?? location.href)).pathname;
+      const normalize = (p: string) => (p.endsWith('/') ? p : `${p}/`);
+      const isTop = (path: string) => [siteRoot, ...['about/', 'projects/', 'process/', 'contact/', 'privacy/', 'details/'].map((x) => siteRoot + x)].includes(normalize(path));
+      document.addEventListener('click', (e) => {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        const a = (e.target as Element).closest?.('a');
+        if (!a || a.target === '_blank' || a.hasAttribute('download') || !a.href) return;
+        const url = new URL(a.href);
+        if (url.origin !== location.origin || url.hash && url.pathname === location.pathname) return;
+        // 案例頁的「回案例列表」：從列表點進來的就直接回去（保留原本捲到的位置）
+        if (a.hasAttribute('data-back-to-list')) {
+          let from: URL | null = null;
+          try { from = document.referrer ? new URL(document.referrer) : null; } catch {}
+          if (from && from.origin === location.origin && normalize(from.pathname) === normalize(url.pathname) && history.length > 1) {
+            e.preventDefault(); history.back(); return;
+          }
+        }
+        if (isTop(url.pathname)) { e.preventDefault(); location.replace(url.href); }
+      });
 
       // Logo 文字：同一欄的中文和英文撐成一樣寬（平均加字距），兩行頭尾與「｜」對齊
       const fitBrand = () => {
